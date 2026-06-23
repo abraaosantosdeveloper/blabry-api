@@ -3,6 +3,7 @@ use chat_app;
 
 create table users (
     id         int          not null auto_increment,
+    full_name	varchar(120) not null,
     username   varchar(30)  not null unique,
     email      varchar(120) not null unique,
     pswd       varchar(64)  not null,

@@ -5,13 +5,20 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "jest": "^30.4.2",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.3",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1",
     "ws": "^8.21.0"
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "jest --runInBand"
+  },
+  "devDependencies": {
+    "supertest": "^7.2.2"
   }
 }
