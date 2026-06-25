@@ -1,40 +1,39 @@
 const authService = require('../services/auth_service');
+const jwt = require('jsonwebtoken');
 
-async function cadastrarUsuario(req, res, next){
-    try {
-        const { nome, apelido, email, senha } = req.body;
-        const usuario = await authService.cadastrarUsuario({ nome, apelido, email, senha });
-        res.status(201).json({ usuario });
-    }
-    catch(err) {
-        next(err)
-    }
+async function cadastrarUsuario(req, res, next) {
+  try {
+    const { nome, apelido, email, senha } = req.body;
+    const usuario = await authService.cadastrarUsuario({ nome, apelido, email, senha });
+    res.status(201).json({ usuario });
+  } catch (err) {
+    next(err);
+  }
 }
 
-async function login(req, res, next){
-    try{
-        const { email, senha } = req.body;
-        const usuario = await authService.login({email, senha});
+async function login(req, res, next) {
+  try {
+    const { email, senha } = req.body;
+    const usuario = await authService.login({ email, senha });
 
-        req.session.userId = usuario.id;
-        req.session.nome = usuario.nome;
+    const token = jwt.sign(
+      { id: usuario.id, nome: usuario.nome },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-        req.json({ usuario });
-    }
-    catch(err){
-        next(err)
-    }
+    res.json({ token, usuario });
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function logout(req, res, next) {
-    try{
-        req.session.destroy();
-        res.clearCookie('connect.sid');
-        res.json({ ok: true });
-    }
-    catch(err){
-        next(err)
-    }
+  try {
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
 }
 
-module.exports = { cadastrarUsuario, login, logout }
+module.exports = { cadastrarUsuario, login, logout };
