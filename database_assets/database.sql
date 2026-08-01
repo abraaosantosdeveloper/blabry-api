@@ -1,35 +1,59 @@
-create database if not exists chat_app;
-use chat_app;
+create database if not exists blabry_db;
+use blabry_db;
 
-create table users (
-    id         int          not null auto_increment,
-    full_name	varchar(120) not null,
-    username   varchar(30)  not null unique,
-    email      varchar(120) not null unique,
-    pswd       varchar(64)  not null,
-    created_at datetime     default current_timestamp,
-    primary key (id)
+/* Países para a nacionalidade */
+create table if not exists countries(
+	id int not null auto_increment,
+    country char(3) not null unique,
+    primary key(id)
 );
 
-create table conversations (
-    id         int      not null auto_increment,
-    user1_id   int      not null,
-    user2_id   int      not null,
+/* Tabela de usuário */
+create table if not exists user(
+    id int not null auto_increment,
+    full_name varchar(100) not null,
+    alias varchar(100) not null,
+    email varchar(100) not null,
+    password_hash varchar(60) not null,
+    nationality char(3) not null,
+    birth_date date not null,
     created_at datetime default current_timestamp,
-    primary key (id),
-    unique key uq_pair (user1_id, user2_id),
-    check (user1_id < user2_id),
-    foreign key (user1_id) references users(id) on delete cascade,
-    foreign key (user2_id) references users(id) on delete cascade
+    deleted_at datetime null default null,
+
+    primary key(id),
+    foreign key(nationality) references countries(country)
 );
 
-create table messages (
-    id              int           not null auto_increment,
-    conversation_id int           not null,
-    sender_id       int           not null,
-    content         varchar(5000) not null,
-    created_at      datetime      default current_timestamp,
-    primary key (id),
-    foreign key (conversation_id) references conversations(id) on delete cascade,
-    foreign key (sender_id)       references users(id) on delete cascade
+/* Chat (seção que contém registros de mensagens agrupados) */
+create table if not exists chat(
+	id int not null auto_increment,
+    user_a_id int,
+    user_b_id int,
+    created_at datetime default current_timestamp,
+    deleted_by_a datetime null default null,
+    deleted_by_b datetime null default null,
+    
+    primary key(id),
+    unique key unique_chat (user_a_id, user_b_id),
+    foreign key(user_a_id) references user(id) on delete set null,
+    foreign key(user_b_id) references user(id) on delete set null
+);
+
+/* Mensagens */
+create table if not exists message(
+	id int not null auto_increment,
+    sender_id int,
+    recipient_id int,
+    content text not null,
+    created_at datetime default current_timestamp,
+    deleted_by_sender datetime null default null,
+    deleted_by_recipient datetime null default null,
+    deleted_at datetime null default null,
+    chat_id int,
+    message_status enum("pending", "sent", "received", "read") not null default "pending",
+    
+    primary key(id),
+    foreign key(sender_id) references user(id) on delete set null,
+    foreign key(recipient_id) references user(id) on delete set null,
+    foreign key(chat_id) references chat(id) on delete cascade
 );
