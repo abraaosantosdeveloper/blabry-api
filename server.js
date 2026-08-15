@@ -20,10 +20,9 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5500',
+  origin: ['http://localhost:5173', 'http://localhost:5500', process.env.FRONTEND_URL],
   methods: ['GET', 'POST'],
-}));
-
+}))
 app.use(express.json());
 app.use(express.static('public'));
 

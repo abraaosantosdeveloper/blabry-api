@@ -117,3 +117,18 @@ create table if not exists follow(
     foreign key(follower_id) references user(id) on delete cascade,
     foreign key(following_id) references user(id) on delete cascade
 );
+
+/* Curtidas dos comentários */
+create table if not exists like_comment(
+    id int not null auto_increment,
+    comment_id int not null,
+    user_id int not null,
+    created_at datetime default current_timestamp,
+
+    primary key(id),
+    unique key unique_like_comment (comment_id, user_id),
+    foreign key(comment_id) references comment(id) on delete cascade,
+    foreign key(user_id) references user(id) on delete cascade
+);
+
+INSERT INTO countries (country) VALUES ('BRA');
