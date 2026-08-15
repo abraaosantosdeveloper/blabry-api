@@ -48,10 +48,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, ()=>{
 
-    /* API start */
-    console.log("\n======================= API Information =======================\n");
-    console.log(`\n\t🌐 API status: \t\t\t On-line!`);
-    console.log(`\n\t🔗 Address: \t\t\t http://127.0.0.1:${PORT}`);
-    console.log("\n===============================================================\n");
+console.log("@@@@@@@@@@@@@@@ API ON-LINE @@@@@@@@@@@@@@@");
 
 });
