@@ -14,7 +14,13 @@ async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacio
   const id = uuidv7();
   const hash = await bcrypt.hash(senha, 12);
   await authRepository.criarUsuario({ id, nome, apelido, email, senha: hash, nascimento, nacionalidade });
-  return { id, nome, email };
+
+  const token = jwt.sign(
+    {id, nome},
+    process.env.JWT_SECRET,
+    {expiresIn: '24h'}
+  )
+  return { token, usuario: { id, nome, email } }
 }
 
 async function login({ email, senha }) {
