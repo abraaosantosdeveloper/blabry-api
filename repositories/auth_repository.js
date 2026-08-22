@@ -8,12 +8,12 @@ async function buscarPorEmail(email) {
   return rows[0] || null;
 }
 
-async function criarUsuario({ nome, apelido, email, senha, nacionalidade, nascimento }) {
-  const [result] = await pool.execute(
-    'INSERT INTO user (full_name, alias, email, password_hash, nationality, birth_date) VALUES (?, ?, ?, ?, ?, ?)',
-    [nome, apelido, email, senha, nacionalidade, nascimento]
+async function criarUsuario({ id, nome, apelido, email, senha, nacionalidade, nascimento }) {
+  await pool.execute(
+    'INSERT INTO user (id, full_name, alias, email, password_hash, nationality, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [id, nome, apelido, email, senha, nacionalidade, nascimento]
   );
-  return result.insertId;
+  return id;
 }
 
 module.exports = { buscarPorEmail, criarUsuario };

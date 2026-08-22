@@ -3,14 +3,14 @@ use blabry_db;
 
 /* Países para a nacionalidade */
 create table if not exists countries(
-	id int not null auto_increment,
+    id int not null auto_increment,
     country char(3) not null unique,
     primary key(id)
 );
 
 /* Tabela de usuário */
 create table if not exists user(
-    id int not null auto_increment,
+    id char(36) not null,
     full_name varchar(100) not null,
     alias varchar(100) not null unique,
     email varchar(100) not null unique,
@@ -26,10 +26,10 @@ create table if not exists user(
 
 /* Chat (suporta conversas privadas e grupos) */
 create table if not exists chat(
-    id int not null auto_increment,
+    id char(36) not null,
     name varchar(100) null,
     is_group boolean default false,
-    created_by int,
+    created_by char(36),
     created_at datetime default current_timestamp,
 
     primary key(id),
@@ -38,9 +38,9 @@ create table if not exists chat(
 
 /* Membros do chat */
 create table if not exists chat_member(
-    id int not null auto_increment,
-    chat_id int not null,
-    user_id int,
+    id char(36) not null,
+    chat_id char(36) not null,
+    user_id char(36),
     is_admin boolean default false,
     joined_at datetime default current_timestamp,
     left_at datetime null default null,
@@ -53,16 +53,16 @@ create table if not exists chat_member(
 
 /* Mensagens */
 create table if not exists message(
-	id int not null auto_increment,
-    sender_id int,
+    id char(36) not null,
+    sender_id char(36),
     content text not null,
     created_at datetime default current_timestamp,
     deleted_by_sender datetime null default null,
     deleted_by_recipient datetime null default null,
     deleted_at datetime null default null,
-    chat_id int,
+    chat_id char(36),
     message_status enum("pending", "sent", "received", "read") not null default "pending",
-    
+
     primary key(id),
     foreign key(sender_id) references user(id) on delete set null,
     foreign key(chat_id) references chat(id) on delete cascade
@@ -70,8 +70,8 @@ create table if not exists message(
 
 /* Postagens do feed */
 create table if not exists post(
-    id int not null auto_increment,
-    user_id int not null,
+    id char(36) not null,
+    user_id char(36) not null,
     content text not null,
     created_at datetime default current_timestamp,
 
@@ -81,9 +81,9 @@ create table if not exists post(
 
 /* Comentários das postagens */
 create table if not exists comment(
-    id int not null auto_increment,
-    post_id int not null,
-    user_id int not null,
+    id char(36) not null,
+    post_id char(36) not null,
+    user_id char(36) not null,
     content text not null,
     created_at datetime default current_timestamp,
 
@@ -94,9 +94,9 @@ create table if not exists comment(
 
 /* Curtidas das postagens */
 create table if not exists like_post(
-    id int not null auto_increment,
-    post_id int not null,
-    user_id int not null,
+    id char(36) not null,
+    post_id char(36) not null,
+    user_id char(36) not null,
     created_at datetime default current_timestamp,
 
     primary key(id),
@@ -107,9 +107,9 @@ create table if not exists like_post(
 
 /* Relacionamentos de seguir */
 create table if not exists follow(
-    id int not null auto_increment,
-    follower_id int not null,
-    following_id int not null,
+    id char(36) not null,
+    follower_id char(36) not null,
+    following_id char(36) not null,
     created_at datetime default current_timestamp,
 
     primary key(id),
@@ -120,9 +120,9 @@ create table if not exists follow(
 
 /* Curtidas dos comentários */
 create table if not exists like_comment(
-    id int not null auto_increment,
-    comment_id int not null,
-    user_id int not null,
+    id char(36) not null,
+    comment_id char(36) not null,
+    user_id char(36) not null,
     created_at datetime default current_timestamp,
 
     primary key(id),

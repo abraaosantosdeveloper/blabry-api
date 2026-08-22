@@ -3,13 +3,10 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-app.set('strict routing', false)
 const PORT = process.env.PORT || 3000;
 
 // Log de requisições
 app.use((req, res, next) => {
-    const start = Date.now();
-
     res.on('finish', () => {
         const timestamp = new Date().toLocaleString();
         const method = req.method;
@@ -45,9 +42,10 @@ app.use((err, req, res, next) => {
   res.status(status).json({ erro: mensagem });
 });
 
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log("@@@@@@@@@@@@@@@ API ON-LINE @@@@@@@@@@@@@@@");
+    });
+}
 
-app.listen(PORT, ()=>{
-
-console.log("@@@@@@@@@@@@@@@ API ON-LINE @@@@@@@@@@@@@@@");
-
-});
+module.exports = app;

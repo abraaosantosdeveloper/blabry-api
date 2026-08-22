@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { v7: uuidv7 } = require('uuid');
 const authRepository = require('../repositories/auth_repository');
 
 async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacionalidade }) {
@@ -10,8 +11,9 @@ async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacio
   if (existe)
     throw Object.assign(new Error('Credenciais inválidas'), { status: 409 });
 
+  const id = uuidv7();
   const hash = await bcrypt.hash(senha, 12);
-  const id = await authRepository.criarUsuario({ nome, apelido, email, senha: hash, nascimento, nacionalidade });
+  await authRepository.criarUsuario({ id, nome, apelido, email, senha: hash, nascimento, nacionalidade });
   return { id, nome, email };
 }
 
@@ -26,11 +28,12 @@ async function login({ email, senha }) {
     throw Object.assign(new Error('Credenciais inválidas'), { status: 401 });
 
   const token = jwt.sign(
-    { id: usuario.id, nome: usuario.full_name  }, process.env.SESSION_SECRET, {expiresIn: '24h'}
+    { id: usuario.id, nome: usuario.full_name },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
   );
 
-  return {token, usuario: {id: usuario.id, nome: usuario.full_name, email: usuario.email}}
-  
+  return { token, usuario: { id: usuario.id, nome: usuario.full_name, email: usuario.email } };
 }
 
 module.exports = { cadastrarUsuario, login };

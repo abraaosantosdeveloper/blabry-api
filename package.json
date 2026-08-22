@@ -9,9 +9,9 @@
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.23.3",
     "socket.io": "^4.8.3",
-    "swagger": "^0.7.5",
     "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.2"
   },
   "scripts": {
     "start": "node server.js",
