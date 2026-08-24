@@ -131,4 +131,16 @@ create table if not exists like_comment(
     foreign key(user_id) references user(id) on delete cascade
 );
 
+create table password_reset (
+    id char(36) not null,
+    user_id char(36) not null,
+    code char(6) not null,
+    expires_at datetime not null,
+    used boolean default false,
+    created_at datetime default current_timestamp,
+
+    primary key(id),
+    foreign key(user_id) references user(id) on delete cascade
+);
+
 INSERT INTO countries (country) VALUES ('BRA');
