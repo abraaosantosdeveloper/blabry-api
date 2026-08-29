@@ -18,6 +18,7 @@ create table if not exists user(
     nationality char(3) not null,
     birth_date date not null,
     pic_url varchar(255),
+    bio varchar(280),
     created_at datetime default current_timestamp,
     deleted_at datetime null default null,
 
