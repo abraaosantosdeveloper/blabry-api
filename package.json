@@ -3,10 +3,12 @@
   "version": "0.5.0",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.3.0",
     "mysql2": "^3.23.3",
     "socket.io": "^4.8.3",
     "swagger-jsdoc": "^6.3.0",
