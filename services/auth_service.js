@@ -1,45 +1,65 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const { v7: uuidv7 } = require('uuid');
-const authRepository = require('../repositories/auth_repository');
+const pool = require('../database');
+const AuthRepository = require('../repositories/auth_repository');
+const User = require('../models/user');
+
+const authRepository = new AuthRepository(pool);
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const erro = (mensagem, status) =>
+  Object.assign(new Error(mensagem), { status });
+
+function gerarToken(usuario) {
+  return jwt.sign(
+    { id: usuario.id, nome: usuario.nome },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+}
 
 async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacionalidade }) {
   if (!nome || !apelido || !email || !senha || !nascimento || !nacionalidade)
-    throw Object.assign(new Error('Campos obrigatórios ausentes'), { status: 400 });
+    throw erro('Campos obrigatórios ausentes', 400);
 
-  const existe = await authRepository.buscarPorEmail(email);
-  if (existe)
-    throw Object.assign(new Error('Credenciais inválidas'), { status: 409 });
+  if (await authRepository.buscarPorEmail(email))
+    throw erro('Credenciais inválidas', 409);
 
-  const id = uuidv7();
-  const hash = await bcrypt.hash(senha, 12);
-  await authRepository.criarUsuario({ id, nome, apelido, email, senha: hash, nascimento, nacionalidade });
+  if (await authRepository.buscarPorApelido(apelido))
+    throw erro('Este @ já está em uso', 409);
 
-  const token = jwt.sign(
-    {id, nome},
-    process.env.JWT_SECRET,
-    {expiresIn: '24h'}
-  )
-  return { token, usuario: { id, nome, email } }
+  const usuario = new User({
+    id: uuidv7(),
+    nome,
+    apelido,
+    email,
+    senhaHash: await User.gerarHash(senha),
+    nacionalidade,
+    nascimento,
+  });
+
+  await authRepository.criar(usuario);
+
+  return { token: gerarToken(usuario), usuario };
 }
 
 async function login({ email, senha }) {
   if (!email || !senha)
-    throw Object.assign(new Error('Campos obrigatórios ausentes'), { status: 400 });
+    throw erro('Campos obrigatórios ausentes', 400);
 
-  const usuario = await authRepository.buscarPorEmail(email);
-  const senhaValida = usuario && await bcrypt.compare(senha, usuario.password_hash);
+  // Aceita email ou @alias no mesmo campo.
+  const identificador = String(email).trim();
+  const usuario = EMAIL_RE.test(identificador)
+    ? await authRepository.buscarPorEmail(identificador)
+    : await authRepository.buscarPorApelido(identificador.replace(/^@/, ''));
+
+  const senhaValida = usuario && await usuario.verificarSenha(senha);
 
   if (!usuario || !senhaValida)
-    throw Object.assign(new Error('Credenciais inválidas'), { status: 401 });
+    throw erro('Credenciais inválidas', 401);
 
-  const token = jwt.sign(
-    { id: usuario.id, nome: usuario.full_name },
-    process.env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-
-  return { token, usuario: { id: usuario.id, nome: usuario.full_name, email: usuario.email } };
+  return { token: gerarToken(usuario), usuario };
 }
 
 module.exports = { cadastrarUsuario, login };
