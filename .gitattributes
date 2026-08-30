@@ -1,0 +1,11 @@
+# Normaliza os fins de linha: o repositório guarda sempre LF, independente
+# do sistema operacional de quem edita. Evita commits que reescrevem
+# arquivos inteiros só porque o editor trocou CRLF por LF.
+* text=auto eol=lf
+
+# Binários não devem passar por conversão nenhuma.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.svg text eol=lf
