@@ -18,9 +18,23 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": [
+      "dotenv/config"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "transformIgnorePatterns": [
+      "/node_modules/(?!uuid)"
+    ]
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.29.7",
     "jest": "^30.4.2",
     "supertest": "^7.2.2"
   }
