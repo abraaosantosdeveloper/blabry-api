@@ -1,7 +1,7 @@
 const multer = require('multer')
 
 const TAMANHO_MAXIMO = 5 * 1024 * 1024;
-const TIPOS_PERMITIDOS = ['image/jpg', 'image/png', 'image/webp']
+const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp']
 
 const upload = multer({
     storage: multer.memoryStorage(),
