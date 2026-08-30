@@ -9,10 +9,22 @@ const SALT_ROUNDS = 12;
  * em JSON.stringify, nem em spread ({...usuario}), nem em console.log.
  * Só é alcançável por quem pedir explicitamente por `usuario.senhaHash`.
  */
+
+/** Data de calendário no formato YYYY-MM-DD, sem conversão de fuso. */
+const soData = (valor) => {
+  if (!valor) return null;
+  if (typeof valor === 'string') return valor.slice(0, 10);
+
+  const d = new Date(valor);
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mes}-${dia}`;
+};
+
 class User {
   constructor({
     id, nome, apelido, email, senhaHash,
-    nacionalidade, nascimento, fotoUrl = null,
+    nacionalidade, nascimento, bio = null,fotoUrl = null,
     criadoEm = null, excluidoEm = null,
   }) {
     this.id = id;
@@ -24,6 +36,7 @@ class User {
     this.fotoUrl = fotoUrl;
     this.criadoEm = criadoEm;
     this.excluidoEm = excluidoEm;
+    this.bio = bio;
 
     Object.defineProperty(this, 'senhaHash', {
       value: senhaHash,
@@ -45,6 +58,7 @@ class User {
       fotoUrl: linha.pic_url,
       criadoEm: linha.created_at,
       excluidoEm: linha.deleted_at,
+      bio: linha.bio,
     });
   }
 
@@ -74,6 +88,22 @@ class User {
       password_hash: this.senhaHash,
       nationality: this.nacionalidade,
       birth_date: this.nascimento,
+    };
+  }
+
+  paraPerfil({proprio=false, seguidores=0, seguindo=0, seguindoEste=null} = {}){
+    return {
+      nome: this.nome,
+      alias: this.apelido,
+      fotoUrl: this.fotoUrl,
+      bio: this.bio,
+      nacionalidade: this.nacionalidade,
+      email: proprio ? this.email : null,
+      nascimento: proprio ? soData(this.nascimento) : null,
+      seguidores,
+      seguindo,
+      desde: this.criadoEm ? new Date(this.criadoEm).getFullYear() : null,
+      seguindoEste: proprio ? null : seguindoEste,
     };
   }
 
