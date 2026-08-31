@@ -6,7 +6,7 @@ class CommentRepository {
   }
 
   static get COLUNAS() {
-    return `c.id, c.post_id, c.user_id, c.content, c.created_at,
+    return `c.id, c.post_id, c.user_id, c.content, c.created_at, c.edited_at,
             u.full_name, u.alias, u.pic_url`;
   }
 

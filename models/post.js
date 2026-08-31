@@ -7,13 +7,15 @@
  */
 class Post {
   constructor({
-    id, texto, criadoEm,
+    id, texto, criadoEm, editadoEm,
     autorId, autorNome, autorAlias, autorFotoUrl,
     curtidas = 0, comentarios = 0, curtido = false,
   }) {
     this.id = id;
     this.texto = texto;
     this.criadoEm = criadoEm;
+    // Preenchido apenas se a publicação já foi editada.
+    this.editadoEm = editadoEm ?? null;
     this.curtidas = curtidas;
     this.comentarios = comentarios;
     this.curtido = curtido;
@@ -37,6 +39,7 @@ class Post {
       id: linha.id,
       texto: linha.content,
       criadoEm: linha.created_at,
+      editadoEm: linha.edited_at,
       autorId: linha.user_id,
       autorNome: linha.full_name,
       autorAlias: linha.alias,
@@ -67,6 +70,7 @@ class Post {
       id: this.id,
       texto: this.texto,
       criadoEm: this.criadoEm,
+      editadoEm: this.editadoEm,
       autor: this.autor,
       curtidas: this.curtidas,
       comentarios: this.comentarios,

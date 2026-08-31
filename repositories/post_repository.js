@@ -7,7 +7,7 @@ class PostRepository {
 
   /** Colunas do post e do autor, já com o JOIN. */
   static get COLUNAS() {
-    return `p.id, p.user_id, p.content, p.created_at,
+    return `p.id, p.user_id, p.content, p.created_at, p.edited_at,
             u.full_name, u.alias, u.pic_url`;
   }
 
