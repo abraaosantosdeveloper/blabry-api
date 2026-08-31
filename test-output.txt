@@ -1,0 +1,885 @@
+
+> chat_app@0.8.0 test
+> jest --runInBand
+
+PASS tests/routes/verification.test.js (6.384 s)
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:30 - "/auth/login" - 403 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:30 - "/auth/login" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/login" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email/resend" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email/resend" - 429 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email/resend" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:31 - "/auth/verify-email/resend" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:32 - "/auth/password" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:32 - "/auth/password" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:32 - "/auth/password" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:32 - "/auth/password" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:32 - "/auth/password" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/auth/password" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me/deletion/code" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me/deletion/code" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me" - 204 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me?code=048213" - 204 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me" - 400 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me" - 400 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:33 - "/users/me" - 401 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/auth.test.js (11.918 s)
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:34 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:34 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:34 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:34 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:35 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:35 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:35 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:35 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:36 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:36 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:36 - "/auth/signup" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:37 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:37 - "/auth/signup" - 409 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:38 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:38 - "/auth/signup" - 409 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:38 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:39 - "/auth/login" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:39 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:40 - "/auth/login" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:41 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:41 - "/auth/login" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:42 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:42 - "/auth/login" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:43 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:44 - "/auth/login" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Falha ao enviar código de cadastro: sendEmail is not a function
+
+    [0m [90m 70 |[39m   } [36mcatch[39m (failure) {
+     [90m 71 |[39m     [90m// eslint-disable-next-line no-console[39m
+    [31m[1m>[22m[39m[90m 72 |[39m     console[33m.[39merror([32m'Falha ao enviar código de cadastro:'[39m[33m,[39m failure[33m.[39mmessage)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 73 |[39m   }
+     [90m 74 |[39m
+     [90m 75 |[39m   [36mreturn[39m { user[33m,[39m verificationPending[33m:[39m [36mtrue[39m }[33m;[39m[0m
+
+      at Object.error [as signUp] (services/auth_service.js:72:13)
+      at signUp (controllers/auth_controller.js:6:20)
+
+    console.log
+      31/08/2026, 20:12:44 - "/auth/signup" - 201 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:44 - "/auth/login" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:45 - "/auth/login" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/profile.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 401 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 400 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 401 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:47 - "/users/me" - 401 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:48 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:49 - "/users/me" - 409 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:49 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:49 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:50 - "/users/me" - 200 - PATCH
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/models/user.test.js
+PASS tests/routes/search.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra" - 401 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=a" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=%40abraao" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=%20%20abraao%20%20" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&page=3&limit=8" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&limit=8" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&limit=100000" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&page=abc&limit=xyz" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&page=-5" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:53 - "/users?q=abra&userId=outro-uuid&viewerId=outro-uuid" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/follow.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/%40outrousuario/follow" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/ninguem/follow" - 404 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/eu/follow" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 200 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/outrousuario/follow" - 200 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/ninguem/follow" - 404 - DELETE
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/post_detail.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ override existing { override: true }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:54 - "/posts/01927d4e-2222-7c21-9b44-2f8a1c6d5e92" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/posts/01927d4e-2222-7c21-9b44-2f8a1c6d5e92" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/posts/01927d4e-2222-7c21-9b44-2f8a1c6d5e92" - 404 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/posts/01927d4e-2222-7c21-9b44-2f8a1c6d5e92" - 401 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/author/posts" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/author/posts?page=2&limit=5" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/@author/posts" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/fantasma/posts" - 404 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/author/posts" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/author/posts?limit=100000" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:54 - "/users/author/posts" - 401 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/photo.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 401 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 415 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 413 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 400 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.error
+      Error: Não foi possível processar a imagem
+          at fail (C:\Projetos\chat_app\back_end\services\photo_service.js:8:17)
+          at Object.fail [as updateProfilePhoto] (C:\Projetos\chat_app\back_end\services\photo_service.js:46:11)
+          at processTicksAndRejections (node:internal/process/task_queues:104:5)
+          at updatePhoto (C:\Projetos\chat_app\back_end\controllers\users_controller.js:6:20) {
+        status: 502
+      }
+
+    [0m [90m 52 |[39m   [90m// Erros 4xx são comportamento esperado — o cliente errou, não o servidor.[39m
+     [90m 53 |[39m   [90m// Só falha real merece stack trace no log.[39m
+    [31m[1m>[22m[39m[90m 54 |[39m   [36mif[39m (status [33m>=[39m [35m500[39m) console[33m.[39merror(err)[33m;[39m
+     [90m    |[39m                              [31m[1m^[22m[39m
+     [90m 55 |[39m
+     [90m 56 |[39m   [36mconst[39m message [33m=[39m process[33m.[39menv[33m.[39m[33mNODE_ENV[39m [33m===[39m [32m'production'[39m
+     [90m 57 |[39m     [33m?[39m [32m'Erro interno do servidor'[39m[0m
+
+      at error (server.js:54:30)
+      at Layer.handleError (node_modules/router/lib/layer.js:116:17)
+      at trimPrefix (node_modules/router/index.js:340:13)
+      at node_modules/router/index.js:297:9
+      at processParams (node_modules/router/index.js:582:12)
+      at next (node_modules/router/index.js:291:5)
+      at node_modules/router/index.js:688:15
+      at next (node_modules/router/index.js:276:14)
+      at next (node_modules/router/lib/route.js:132:14)
+      at next (controllers/users_controller.js:9:5)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 502 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 404 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:55 - "/users/photo" - 200 - POST
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/routes/countries.test.js
+  ● Console
+
+    console.log
+      ◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      31/08/2026, 20:12:56 - "/countries" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:56 - "/countries" - 200 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+    console.log
+      31/08/2026, 20:12:56 - "/rota-protegida-qualquer" - 401 - GET
+
+      at ServerResponse.log (server.js:15:17)
+
+PASS tests/repositories/users.repository.test.js
+PASS tests/repositories/post.repository.author.test.js
+PASS tests/repositories/users.repository.search.test.js
+PASS tests/repositories/users.repository.update.test.js
+
+Test Suites: 13 passed, 13 total
+Tests:       157 passed, 157 total
+Snapshots:   0 total
+Time:        30.125 s, estimated 31 s
+Ran all test suites.

@@ -16,7 +16,8 @@ const mockState = {
   sentEmails: [],   // { para, purpose }
   confirmed: [],      // ids passados a confirmarEmail
   changedPasswords: [],   // { userId, hash }
-  deleted: [],        // ids passados a excluirConta
+  deleted: [],
+  purged: [],            // ids passados a purgeContent
   attempts: [],       // ids de códigos com tentativa registrada
   consumed: [],       // ids de códigos consumed
   created: [],          // códigos emitidos
@@ -35,6 +36,7 @@ jest.mock('../../repositories/auth_repository', () =>
     async confirmEmail(id) { mockState.confirmed.push(id); return 1; }
     async updatePassword(userId, hash) { mockState.changedPasswords.push({ userId, hash }); return 1; }
     async deleteAccount(id) { mockState.deleted.push(id); return 1; }
+    async purgeContent(id) { mockState.purged.push(id); return 1; }
   }
 );
 
@@ -99,6 +101,7 @@ beforeEach(() => {
   mockState.confirmed = [];
   mockState.changedPasswords = [];
   mockState.deleted = [];
+  mockState.purged = [];
   mockState.attempts = [];
   mockState.consumed = [];
   mockState.created = [];
@@ -442,6 +445,25 @@ describe('Exclusão de conta', () => {
       .set('Authorization', `Bearer ${token()}`);
 
     expect(res.status).toBe(204);
+    expect(mockState.deleted).toEqual([USER_ID]);
+  });
+
+  /* Dado: a exclusão concluída;
+     Quando: verificamos o que foi chamado;
+     Então: o conteúdo publicado é apagado ANTES de a conta ser anonimizada.
+     A ordem importa: falhar no meio deixa uma conta ativa com conteúdo
+     parcialmente removido, que a pessoa consegue reportar. A ordem inversa
+     deixaria conteúdo publicado atribuído a uma conta encerrada, visível e
+     sem dono para pedir a remoção. */
+  it('apaga o conteúdo antes de encerrar a conta', async () => {
+    mockState.user = fakeUser({ verified: true });
+    mockState.activeCode = await fakeActiveCode();
+
+    await request(app)
+      .delete(`/users/me?code=${CODE}`)
+      .set('Authorization', `Bearer ${token()}`);
+
+    expect(mockState.purged).toEqual([USER_ID]);
     expect(mockState.deleted).toEqual([USER_ID]);
   });
 

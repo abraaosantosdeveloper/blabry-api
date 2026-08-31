@@ -9,6 +9,7 @@ const postController = require('../controllers/post_controller');
    autenticação: são operações sobre a credencial e a identidade, não sobre
    o perfil. As rotas ficam aqui apenas porque o caminho começa por /users. */
 const authController = require('../controllers/auth_controller');
+const { limiteEnvioDeEmail } = require('../middlewares/rate_limit');
 
 const singleUpload = require('../middlewares/upload');
 
@@ -276,7 +277,7 @@ router.get('/me', usersController.myProfile);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/me/deletion/code', authController.requestAccountDeletion);
+router.post('/me/deletion/code', limiteEnvioDeEmail, authController.requestAccountDeletion);
 
 /**
  * @swagger

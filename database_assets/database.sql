@@ -34,8 +34,10 @@ create table if not exists user(
        porque responde também "quando?" pelo mesmo espaço. */
     email_verified_at datetime null default null,
     password_hash varchar(60) not null,
-    nationality char(3) not null,
-    birth_date date not null,
+    /* Anuláveis para que a exclusão de conta possa anonimizá-las. A
+       obrigatoriedade no cadastro é regra do serviço, não da coluna. */
+    nationality char(3) null default null,
+    birth_date date null default null,
     pic_url varchar(255),
     bio varchar(280),
     created_at datetime default current_timestamp,

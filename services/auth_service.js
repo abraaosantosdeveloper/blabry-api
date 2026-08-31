@@ -215,6 +215,14 @@ async function deleteAccount({ userId, code }) {
     code,
   });
 
+  /* Conteúdo primeiro, conta depois.
+
+     A ordem é deliberada: se o processo morrer no meio, o pior estado
+     possível é uma conta ainda ativa com parte do conteúdo removido — que a
+     pessoa consegue reportar e nós conseguimos terminar. A ordem inversa
+     deixaria uma conta anonimizada com conteúdo publicado atribuído a
+     "Conta encerrada", visível e sem dono para pedir a remoção. */
+  await authRepository.purgeContent(userId);
   await authRepository.deleteAccount(userId);
 
   return { ok: true };

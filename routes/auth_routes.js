@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth_controller');
+const { limiteAutenticacao, limiteEnvioDeEmail } = require('../middlewares/rate_limit');
 
 /**
  * @swagger
@@ -83,7 +84,7 @@ const authController = require('../controllers/auth_controller');
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/signup', authController.signUp);
+router.post('/signup', limiteAutenticacao, authController.signUp);
 
 /**
  * @swagger
@@ -146,7 +147,7 @@ router.post('/signup', authController.signUp);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/login', authController.login);
+router.post('/login', limiteAutenticacao, authController.login);
 
 /**
  * @swagger
@@ -189,7 +190,7 @@ router.post('/login', authController.login);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/verify-email/resend', authController.resendSignupCode);
+router.post('/verify-email/resend', limiteEnvioDeEmail, authController.resendSignupCode);
 
 /**
  * @swagger
@@ -237,7 +238,7 @@ router.post('/verify-email/resend', authController.resendSignupCode);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/verify-email', authController.confirmEmail);
+router.post('/verify-email', limiteAutenticacao, authController.confirmEmail);
 
 /**
  * @swagger
@@ -275,7 +276,7 @@ router.post('/verify-email', authController.confirmEmail);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/password/code', authController.requestPasswordReset);
+router.post('/password/code', limiteEnvioDeEmail, authController.requestPasswordReset);
 
 /**
  * @swagger
@@ -322,7 +323,7 @@ router.post('/password/code', authController.requestPasswordReset);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/password', authController.resetPassword);
+router.post('/password', limiteAutenticacao, authController.resetPassword);
 
 /**
  * @swagger
