@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth_controller');
-const { limiteAutenticacao, limiteEnvioDeEmail } = require('../middlewares/rate_limit');
+const {
+  limiteLogin, limiteCadastro, limiteVerificacao, limiteEnvioDeEmail,
+} = require('../middlewares/rate_limit');
 
 /**
  * @swagger
@@ -84,7 +86,7 @@ const { limiteAutenticacao, limiteEnvioDeEmail } = require('../middlewares/rate_
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/signup', limiteAutenticacao, authController.signUp);
+router.post('/signup', limiteCadastro, authController.signUp);
 
 /**
  * @swagger
@@ -147,7 +149,7 @@ router.post('/signup', limiteAutenticacao, authController.signUp);
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/login', limiteAutenticacao, authController.login);
+router.post('/login', limiteLogin, authController.login);
 
 /**
  * @swagger
@@ -238,7 +240,7 @@ router.post('/verify-email/resend', limiteEnvioDeEmail, authController.resendSig
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/verify-email', limiteAutenticacao, authController.confirmEmail);
+router.post('/verify-email', limiteVerificacao, authController.confirmEmail);
 
 /**
  * @swagger
@@ -323,7 +325,7 @@ router.post('/password/code', limiteEnvioDeEmail, authController.requestPassword
  *       500:
  *         $ref: '#/components/responses/InternalError'
  */
-router.post('/password', limiteAutenticacao, authController.resetPassword);
+router.post('/password', limiteVerificacao, authController.resetPassword);
 
 /**
  * @swagger

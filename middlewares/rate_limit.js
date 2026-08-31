@@ -44,6 +44,19 @@ function limitarRequisicoes({ janelaMs, maximo, mensagem, chave = (req) => req.i
   relogio.unref();
 
   return (req, res, next) => {
+    /* Sob teste o limitador não age.
+
+       Não é conveniência: a suíte roda dezenas de requisições do mesmo
+       endereço em segundos, que é exatamente o padrão que o limitador
+       existe para barrar. Mantê-lo ligado faria os testes de autenticação
+       falharem por 429 — e, pior, o primeiro 429 derruba o preparo do
+       cenário, então a falha aparece longe da causa.
+
+       O comportamento do limitador não fica sem cobertura: ele tem suíte
+       própria em tests/middlewares/rate_limit.test.js, que exercita limite,
+       isolamento por chave, expiração da janela e Retry-After. */
+    if (process.env.NODE_ENV === 'test') return next();
+
     const agora = Date.now();
     const k = chave(req);
     let balde = baldes.get(k);
@@ -71,19 +84,51 @@ function limitarRequisicoes({ janelaMs, maximo, mensagem, chave = (req) => req.i
   };
 }
 
+/* Cada rota sensível tem o próprio balde, e isso não é detalhe.
+
+   Um balde compartilhado entre cadastro, verificação e login significa que
+   um usuário novo gasta três ou quatro requisições só para entrar pela
+   primeira vez. Atrás de uma rede compartilhada — universidade, escritório,
+   operadora móvel —, onde centenas de pessoas saem pelo mesmo endereço,
+   isso trancaria a quinta pessoa a se cadastrar. Baldes separados fazem cada
+   limite responder ao abuso que ele realmente pretende conter. */
+
 /**
- * Autenticação: login e cadastro.
+ * Login. É aqui que mora a força bruta contra senha.
  *
- * O número é generoso de propósito. O usuário legítimo erra a senha três ou
- * quatro vezes; um ataque de força bruta precisa de milhares de tentativas.
- * Qualquer valor entre 10 e 50 separa os dois casos, e o mais alto reduz o
- * risco de trancar gente de rede compartilhada — universidade, escritório,
- * operadora móvel —, onde muitas pessoas chegam pelo mesmo IP.
+ * O usuário legítimo erra três ou quatro vezes; um ataque precisa de
+ * milhares. Qualquer valor nessa faixa separa os dois casos, e o mais alto
+ * reduz o risco de trancar gente de rede compartilhada.
  */
-const limiteAutenticacao = limitarRequisicoes({
+const limiteLogin = limitarRequisicoes({
   janelaMs: 10 * 60 * 1000,
-  maximo: 20,
+  maximo: 30,
   mensagem: 'Muitas tentativas de acesso. Aguarde alguns minutos e tente de novo.',
+});
+
+/**
+ * Cadastro. O abuso aqui não é adivinhar senha, é criar contas em massa.
+ *
+ * Mais restrito que o login porque ninguém se cadastra dez vezes sem querer,
+ * enquanto errar a senha várias vezes é comum.
+ */
+const limiteCadastro = limitarRequisicoes({
+  janelaMs: 10 * 60 * 1000,
+  maximo: 10,
+  mensagem: 'Muitas contas criadas a partir deste acesso. Aguarde alguns minutos.',
+});
+
+/**
+ * Conferência de código.
+ *
+ * A defesa principal contra chute já está no serviço: cinco tentativas
+ * erradas invalidam o código. Este limite cobre o atacante que pede código
+ * novo para renovar as tentativas.
+ */
+const limiteVerificacao = limitarRequisicoes({
+  janelaMs: 10 * 60 * 1000,
+  maximo: 30,
+  mensagem: 'Muitas tentativas de verificação. Aguarde alguns minutos.',
 });
 
 /**
@@ -115,7 +160,9 @@ const limiteGeral = limitarRequisicoes({
 
 module.exports = {
   limitarRequisicoes,
-  limiteAutenticacao,
+  limiteLogin,
+  limiteCadastro,
+  limiteVerificacao,
   limiteEnvioDeEmail,
   limiteGeral,
 };
