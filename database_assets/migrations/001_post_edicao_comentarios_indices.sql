@@ -17,9 +17,9 @@ ALTER TABLE post
     ADD COLUMN edited_at datetime NULL DEFAULT NULL AFTER created_at;
 
 /* ---- Busca no conteúdo dos posts ----
-   Já aplicado. Mantido aqui como registro da migração.
-   LIKE '%termo%' não usa índice; MATCH ... AGAINST usa. */
--- ALTER TABLE post ADD FULLTEXT INDEX idx_post_conteudo (content);
+   ATENÇÃO: este comando foi deixado comentado por engano, sob a suposição
+   de já ter sido aplicado — o que valia apenas para o ambiente local.
+   Ele foi movido para a migração 003. Não descomente aqui. */
 
 /* ---- Respostas a comentários (um nível, com menção) ----
    Referencia o comentário respondido, não o autor: dá para descobrir o
