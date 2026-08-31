@@ -19,7 +19,7 @@ const authController = require('../controllers/auth_controller');
  *         application/json:
  *           schema:
  *             type: object
- *             required: [nome, apelido, email, senha, nascimento, nacionalidade]
+ *             required: [nome, apelido, email, senha, nascimento, nacionalidade, aceitouPolitica]
  *             properties:
  *               nome:
  *                 type: string
@@ -45,12 +45,31 @@ const authController = require('../controllers/auth_controller');
  *                 type: string
  *                 description: Código ISO alpha-3 existente em `GET /countries`
  *                 example: BRA
+ *               aceitouPolitica:
+ *                 type: boolean
+ *                 enum: [true]
+ *                 description: |
+ *                   Aceite da política de privacidade. Deve ser o booleano
+ *                   `true` — a comparação é estrita, então a string "true" é
+ *                   recusada. A interface já bloqueia o envio sem o aceite;
+ *                   esta validação cobre chamadas feitas fora dela.
+ *                 example: true
  *     responses:
  *       201:
- *         description: Conta criada
+ *         description: |
+ *           Conta criada, aguardando confirmação do e-mail.
+ *
+ *           **Não devolve token.** A conta nasce com `email_verified_at`
+ *           nulo e o login é recusado com 403 até a confirmação. Um código
+ *           de 6 dígitos é enviado ao e-mail informado; use
+ *           `POST /auth/verificar-email` para ativá-la.
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/RespostaAutenticacao' }
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 usuario: { $ref: '#/components/schemas/Usuario' }
+ *                 verificacaoPendente: { type: boolean, example: true }
  *       400:
  *         description: Campos obrigatórios ausentes
  *         content:
@@ -112,10 +131,198 @@ router.post('/cadastro', authController.cadastrarUsuario);
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Erro' }
+ *       403:
+ *         description: |
+ *           E-mail ainda não confirmado. A verificação da senha acontece
+ *           **antes** desta checagem: sem isso, bastaria digitar um e-mail
+ *           qualquer para descobrir se ele tem conta aqui.
+ *
+ *           O status distingue "não sabemos quem é você" (401) de "sabemos,
+ *           mas falta um passo" (403), permitindo à interface levar o
+ *           usuário à tela de código em vez de dizer "senha errada".
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
  *       500:
  *         $ref: '#/components/responses/ErroInterno'
  */
 router.post('/login', authController.login);
+
+/**
+ * @swagger
+ * /auth/verificar-email/reenviar:
+ *   post:
+ *     tags: [Autenticação]
+ *     summary: Reenvia o código de confirmação de e-mail
+ *     description: |
+ *       Responde 200 mesmo quando o e-mail não tem conta ou já está
+ *       confirmado. A resposta uniforme é deliberada: uma resposta diferente
+ *       por caso transformaria a rota em um verificador de quem tem conta
+ *       aqui — informação que não é nossa para distribuir.
+ *
+ *       Há intervalo mínimo de 60 segundos entre dois pedidos, para impedir
+ *       que a caixa de entrada de alguém seja usada como alvo de spam.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email, example: abraao@exemplo.com }
+ *     responses:
+ *       200:
+ *         description: Pedido registrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok: { type: boolean, example: true }
+ *       429:
+ *         description: Novo código pedido cedo demais
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.post('/verificar-email/reenviar', authController.reenviarCodigoCadastro);
+
+/**
+ * @swagger
+ * /auth/verificar-email:
+ *   post:
+ *     tags: [Autenticação]
+ *     summary: Confirma o e-mail e ativa a conta
+ *     description: |
+ *       Devolve o token: a confirmação é o último passo do cadastro, e pedir
+ *       login logo depois de digitar um código seria um obstáculo sem função
+ *       de segurança — o usuário acabou de provar que tem o e-mail.
+ *
+ *       O código vale 15 minutos, serve uma única vez e tolera 5 tentativas
+ *       erradas. Ele é guardado como hash: um vazamento da tabela não
+ *       entrega acesso a conta alguma.
+ *
+ *       As falhas — código errado, expirado, já usado ou sem tentativas —
+ *       compartilham a mesma mensagem. Detalhar qual delas é diria a um
+ *       atacante se vale a pena continuar.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, codigo]
+ *             properties:
+ *               email: { type: string, format: email, example: abraao@exemplo.com }
+ *               codigo:
+ *                 type: string
+ *                 pattern: '^[0-9]{6}$'
+ *                 example: '048213'
+ *     responses:
+ *       200:
+ *         description: E-mail confirmado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/RespostaAutenticacao' }
+ *       400:
+ *         description: Código inválido ou expirado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.post('/verificar-email', authController.confirmarEmail);
+
+/**
+ * @swagger
+ * /auth/senha/codigo:
+ *   post:
+ *     tags: [Autenticação]
+ *     summary: Envia o código para troca de senha
+ *     description: |
+ *       Resposta uniforme para e-mail existente ou não, pelo mesmo motivo do
+ *       reenvio de confirmação.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email, example: abraao@exemplo.com }
+ *     responses:
+ *       200:
+ *         description: Pedido registrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok: { type: boolean, example: true }
+ *       429:
+ *         description: Novo código pedido cedo demais
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.post('/senha/codigo', authController.solicitarTrocaDeSenha);
+
+/**
+ * @swagger
+ * /auth/senha:
+ *   post:
+ *     tags: [Autenticação]
+ *     summary: Define uma nova senha mediante código
+ *     description: |
+ *       A regra de força da senha é validada aqui, e não só na interface.
+ *
+ *       Trocar a senha também confirma o e-mail: o usuário acabou de provar
+ *       que tem acesso a ele, e exigir a mesma prova duas vezes não
+ *       acrescenta segurança.
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, codigo, novaSenha]
+ *             properties:
+ *               email: { type: string, format: email, example: abraao@exemplo.com }
+ *               codigo: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
+ *               novaSenha:
+ *                 type: string
+ *                 format: password
+ *                 description: Mínimo 8 caracteres, uma maiúscula e um caractere especial
+ *                 example: NovaSenha#1
+ *     responses:
+ *       200:
+ *         description: Senha alterada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok: { type: boolean, example: true }
+ *       400:
+ *         description: Código inválido, expirado, ou senha fraca
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.post('/senha', authController.trocarSenha);
 
 /**
  * @swagger
