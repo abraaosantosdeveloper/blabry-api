@@ -86,6 +86,77 @@ class UsuariosRepository {
         );
         return resultado.affectedRows;
     }
+
+    /**
+     * Busca usuários por nome ou pelo @, com paginação.
+     *
+     * @param {object}  opcoes
+     * @param {string}  opcoes.q          termo digitado, já normalizado pelo service
+     * @param {string}  opcoes.visitanteId quem está buscando — excluído dos resultados
+     * @param {number}  opcoes.limite     quantos registros trazer nesta página
+     * @param {number}  opcoes.offset     quantos registros pular antes de começar
+     * @returns {Promise<{usuarios: object[], total: number}>}
+     */
+    async buscar({ q, visitanteId, limite = 8, offset = 0 }) {
+        // LIMIT e OFFSET não aceitam placeholder "?" em prepared statement no
+        // MySQL: o servidor precisa conhecê-los para compilar a consulta. Como
+        // eles são interpolados direto na string, esta checagem é o que impede
+        // que qualquer coisa diferente de um inteiro chegue ao SQL.
+        if (!Number.isInteger(limite) || !Number.isInteger(offset))
+            throw new TypeError('limite e offset devem ser inteiros');
+
+        // O termo é usado em três comparações diferentes, cada uma com um
+        // formato próprio. Montamos os três aqui para deixar a query legível.
+        const prefixo = `${q}%`;      // "abra%"  → casa quem COMEÇA com o termo
+        const meio = `%${q}%`;        // "%abra%" → casa quem CONTÉM o termo
+        const exato = q;              // "abra"   → casa quem é exatamente o termo
+
+        const [rows] = await this.pool.execute(
+            `SELECT u.id, u.full_name, u.alias, u.pic_url, u.bio
+               FROM user u
+              WHERE u.deleted_at IS NULL          -- contas excluídas não aparecem
+                AND u.id <> ?                     -- não faz sentido achar a si mesmo
+                AND (u.alias LIKE ?                -- @ começando com o termo
+                     OR u.full_name LIKE ?)        -- nome contendo o termo
+              -- Relevância: quem é exatamente o termo vem primeiro, depois quem
+              -- começa com ele, e por último quem apenas o contém no meio do nome.
+              -- O CASE devolve 0, 1 ou 2 e o ORDER BY crescente coloca o 0 no topo.
+              ORDER BY CASE
+                         WHEN u.alias = ? THEN 0
+                         WHEN u.alias LIKE ? THEN 1
+                         ELSE 2
+                       END,
+                       u.full_name ASC
+              LIMIT ${limite} OFFSET ${offset}`,
+            // A ordem deste array segue exatamente a ordem dos "?" acima:
+            // visitante, alias LIKE prefixo, nome LIKE meio, alias exato, alias LIKE prefixo
+            [visitanteId, prefixo, meio, exato, prefixo]
+        );
+
+        // O total precisa das MESMAS condições da consulta acima, senão a
+        // paginação promete páginas que não existem. Só o ORDER BY e o LIMIT
+        // ficam de fora, porque não afetam a contagem.
+        const [[{ total }]] = await this.pool.execute(
+            `SELECT COUNT(*) AS total
+               FROM user u
+              WHERE u.deleted_at IS NULL
+                AND u.id <> ?
+                AND (u.alias LIKE ? OR u.full_name LIKE ?)`,
+            [visitanteId, prefixo, meio]
+        );
+
+        // Formato enxuto de propósito: a lista de resultados só precisa do
+        // suficiente para desenhar cada linha e navegar até o perfil.
+        return {
+            usuarios: rows.map((linha) => ({
+                nome: linha.full_name,
+                alias: linha.alias,
+                fotoUrl: linha.pic_url ?? null,
+                bio: linha.bio ?? null,
+            })),
+            total: Number(total),
+        };
+    }
 }
 
 module.exports = UsuariosRepository

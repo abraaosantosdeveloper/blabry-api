@@ -128,4 +128,80 @@ async function perfilPorAlias(alias, visitanteId) {
   return usuario.paraPerfil({ proprio, seguidores, seguindo, seguindoEste });
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarPerfil }
+
+/* ------------------------------------------------------------------
+   Busca de usuários
+   ------------------------------------------------------------------ */
+
+/** Menor termo aceito. Abaixo disso a busca traria meio banco de dados. */
+const BUSCA_MINIMA = 2
+
+/** Quantos resultados por página quando o cliente não pede outro valor. */
+const LIMITE_PADRAO = 8
+
+/** Teto por página. Impede que ?limite=100000 derrube a instância. */
+const LIMITE_MAXIMO = 50
+
+/**
+ * Converte um valor vindo da query string em inteiro dentro de uma faixa.
+ * Tudo que chega pela URL é texto e pode ser qualquer coisa, então:
+ *  - o que não for número vira o padrão
+ *  - o que estiver fora da faixa é puxado para dentro dela
+ * Assim nada estoura e o repositório sempre recebe inteiros válidos.
+ */
+function inteiroNaFaixa(valor, { padrao, minimo, maximo }) {
+    const numero = Number.parseInt(valor, 10)
+    if (!Number.isInteger(numero)) return padrao
+    return Math.min(Math.max(numero, minimo), maximo)
+}
+
+/**
+ * Busca usuários por nome ou @.
+ *
+ * @param {object} opcoes
+ * @param {string} opcoes.usuarioId quem está buscando (vem do token)
+ * @param {string} opcoes.q         termo digitado
+ * @param {string} opcoes.pagina    número da página, como texto da URL
+ * @param {string} opcoes.limite    itens por página, como texto da URL
+ */
+async function buscar({ usuarioId, q, pagina, limite } = {}) {
+    // O @ pode vir digitado pelo usuário; ele não faz parte do alias gravado.
+    // trim() antes e depois porque " @abraao " é entrada plausível.
+    const termo = String(q ?? '').trim().replace(/^@/, '').trim()
+
+    // Termo curto demais devolve lista vazia, e não a base inteira: um filtro
+    // que não pode ser satisfeito nunca deve retornar tudo.
+    if (termo.length < BUSCA_MINIMA) {
+        return { usuarios: [], pagina: 1, totalPaginas: 1, total: 0 }
+    }
+
+    const paginaAtual = inteiroNaFaixa(pagina, {
+        padrao: 1, minimo: 1, maximo: Number.MAX_SAFE_INTEGER,
+    })
+
+    const porPagina = inteiroNaFaixa(limite, {
+        padrao: LIMITE_PADRAO, minimo: 1, maximo: LIMITE_MAXIMO,
+    })
+
+    // Aqui acontece a tradução entre dois vocabulários: o cliente fala em
+    // "página 3", o banco fala em "pule 16 linhas". Nenhum dos dois precisa
+    // conhecer o conceito do outro, e trocar por paginação com cursor mudaria
+    // apenas esta linha.
+    const { usuarios, total } = await usuariosRepository.buscar({
+        q: termo,
+        visitanteId: usuarioId,
+        limite: porPagina,
+        offset: (paginaAtual - 1) * porPagina,
+    })
+
+    return {
+        usuarios,
+        pagina: paginaAtual,
+        // Math.max(1, ...) porque uma lista vazia ainda tem uma página:
+        // sem isso o cliente exibiria "Página 1 de 0".
+        totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
+        total,
+    }
+}
+
+module.exports = { meuPerfil, perfilPorAlias, atualizarPerfil, buscar }

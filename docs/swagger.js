@@ -68,6 +68,14 @@ const options = {
             id: { type: 'string', format: 'uuid' },
             texto: { type: 'string', maxLength: 280, example: 'Primeiro blab!' },
             criadoEm: { type: 'string', format: 'date-time' },
+            editadoEm: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description:
+                'Preenchido quando o autor editou a publicação dentro da janela ' +
+                'de 15 minutos. A interface a marca como editada.',
+            },
             autor: { $ref: '#/components/schemas/Autor' },
             curtidas: { type: 'integer', description: 'COUNT em like_post', example: 12 },
             comentarios: { type: 'integer', description: 'COUNT em comment', example: 3 },

@@ -37,4 +37,38 @@ async function atualizarPerfil(req, res, next) {
   }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil };
+
+/**
+ * GET /users?q=&pagina=&limite=
+ *
+ * Busca usuários por nome ou @.
+ *
+ * O controller não converte nem valida nada: entrega ao service exatamente
+ * o que veio na URL. Quem define o que é uma página válida é a regra de
+ * negócio, e duplicar essa decisão aqui criaria dois lugares para ela
+ * divergir com o tempo.
+ */
+async function buscar(req, res, next) {
+    try {
+        // req.query traz os parâmetros da URL, todos como texto.
+        const { q, pagina, limite } = req.query;
+
+        const resultado = await usuariosService.buscar({
+            // req.userId vem do middleware de autenticação, que o extraiu do
+            // token. Nunca do corpo nem da URL: a identidade não é algo que o
+            // cliente possa afirmar.
+            usuarioId: req.userId,
+            q,
+            pagina,
+            limite,
+        });
+
+        res.status(200).json(resultado);
+    } catch (err) {
+        // Qualquer erro segue para o middleware central, que decide o status
+        // e a mensagem. O controller não trata erro localmente.
+        next(err);
+    }
+}
+
+module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil, buscar };

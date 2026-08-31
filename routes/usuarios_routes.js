@@ -177,6 +177,58 @@ router.patch('/me', usuariosController.atualizarPerfil);
  *       500:
  *         $ref: '#/components/responses/ErroInterno'
  */
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     tags: [Usuários]
+ *     summary: Busca usuários por nome ou @
+ *     description: |
+ *       Compara o termo com o @ por prefixo e com o nome completo por
+ *       conteúdo. A ordenação privilegia, nesta ordem: quem tem o @ exato,
+ *       quem tem o @ começando pelo termo, e por fim os demais, em ordem
+ *       alfabética.
+ *
+ *       O próprio usuário autenticado é excluído dos resultados, e contas
+ *       excluídas não aparecem.
+ *
+ *       Termos com menos de 2 caracteres devolvem lista vazia — um filtro
+ *       impossível de satisfazer não retorna a base inteira.
+ *     parameters:
+ *       - name: q
+ *         in: query
+ *         required: true
+ *         schema: { type: string, minLength: 2 }
+ *         description: Nome ou @ procurado. O caractere @ é opcional.
+ *         example: abraao
+ *       - $ref: '#/components/parameters/Pagina'
+ *       - $ref: '#/components/parameters/Limite'
+ *     responses:
+ *       200:
+ *         description: Página de usuários
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - type: object
+ *                   properties:
+ *                     usuarios:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           nome: { type: string, example: 'Abraão Santos' }
+ *                           alias: { type: string, example: 'abraaosantosdev' }
+ *                           fotoUrl: { type: string, nullable: true }
+ *                           bio: { type: string, nullable: true }
+ *                 - $ref: '#/components/schemas/Paginacao'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.get('/', usuariosController.buscar);
+
 router.get('/me', usuariosController.meuPerfil);
 
 /**
