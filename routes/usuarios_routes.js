@@ -263,6 +263,63 @@ router.get('/me', usuariosController.meuPerfil);
  *       500:
  *         $ref: '#/components/responses/ErroInterno'
  */
+/**
+ * @swagger
+ * /users/{alias}/follow:
+ *   post:
+ *     tags: [Usuários]
+ *     summary: Passa a seguir um usuário
+ *     description: |
+ *       Idempotente — seguir duas vezes não duplica o relacionamento, por
+ *       causa da restrição de unicidade no par seguidor/seguido.
+ *
+ *       Responde com o total de seguidores recontado no banco, e não com um
+ *       incremento: o cliente pode ter feito atualização otimista, e esta
+ *       resposta é a reconciliação.
+ *     parameters:
+ *       - name: alias
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *         description: O @ do usuário, sem a arroba.
+ *     responses:
+ *       200:
+ *         description: Estado do relacionamento
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Seguir' }
+ *       400:
+ *         description: Tentativa de seguir a si mesmo
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ *   delete:
+ *     tags: [Usuários]
+ *     summary: Deixa de seguir um usuário
+ *     description: Idempotente — deixar de seguir quem não era seguido não é erro.
+ *     parameters:
+ *       - name: alias
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Estado do relacionamento
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Seguir' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ */
+router.post('/:alias/follow', usuariosController.seguir);
+router.delete('/:alias/follow', usuariosController.deixarDeSeguir);
+
 router.get('/:alias', usuariosController.perfilPorAlias);
 
 module.exports = router;

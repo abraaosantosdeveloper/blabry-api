@@ -157,6 +157,83 @@ class UsuariosRepository {
             total: Number(total),
         };
     }
+
+    /**
+     * Traduz um @ no identificador interno do usuário.
+     *
+     * As rotas públicas trabalham com alias porque é o que aparece na URL e
+     * o que a pessoa conhece; as tabelas de relacionamento guardam o id.
+     * Esta consulta é a ponte entre os dois.
+     *
+     * @param {string} alias o @ do usuário, sem a arroba
+     * @returns {Promise<string|null>} o id, ou null se não existir
+     */
+    async buscarIdPorAlias(alias) {
+        const [rows] = await this.pool.execute(
+            'SELECT id FROM user WHERE alias = ? AND deleted_at IS NULL LIMIT 1',
+            [alias]
+        );
+        // rows[0] existe apenas se houve resultado; o ?. evita ler de undefined.
+        return rows[0]?.id ?? null;
+    }
+
+    /**
+     * Registra que um usuário passou a seguir outro.
+     *
+     * A operação é idempotente: a tabela tem UNIQUE (follower_id, following_id),
+     * e o ON DUPLICATE KEY absorve a segunda tentativa sem erro — dois cliques
+     * rápidos ou duas abas abertas não criam duas linhas.
+     *
+     * O "UPDATE follower_id = follower_id" é intencionalmente inútil: serve só
+     * para dar ao MySQL uma ação válida no caso de duplicata. A alternativa
+     * INSERT IGNORE seria pior, porque silenciaria TODOS os erros, inclusive
+     * violação de chave estrangeira — seguir alguém inexistente passaria batido.
+     *
+     * @param {string} id         identificador da linha de relacionamento (UUID v7)
+     * @param {string} seguidorId quem está seguindo
+     * @param {string} seguidoId  quem passou a ser seguido
+     */
+    async seguir(id, seguidorId, seguidoId) {
+        await this.pool.execute(
+            `INSERT INTO follow (id, follower_id, following_id) VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE follower_id = follower_id`,
+            [id, seguidorId, seguidoId]
+        );
+    }
+
+    /**
+     * Desfaz o relacionamento.
+     *
+     * Também idempotente: deixar de seguir quem não era seguido não é erro,
+     * apenas não afeta linha alguma.
+     */
+    async deixarDeSeguir(seguidorId, seguidoId) {
+        await this.pool.execute(
+            'DELETE FROM follow WHERE follower_id = ? AND following_id = ?',
+            [seguidorId, seguidoId]
+        );
+    }
+
+    /**
+     * Reconta os seguidores de um usuário.
+     *
+     * Chamado depois de seguir ou deixar de seguir para devolver o número
+     * verdadeiro ao cliente, em vez de um valor incrementado em memória. Se
+     * duas pessoas seguirem ao mesmo tempo, o que vale é o que está no banco.
+     *
+     * Atenção à direção: seguidores de X são as linhas em que X aparece como
+     * `following_id` — ou seja, gente que segue ELE. Inverter as colunas aqui
+     * não gera erro, só devolve o número errado.
+     */
+    async contarSeguidores(usuarioId) {
+        const [[{ total }]] = await this.pool.execute(
+            'SELECT COUNT(*) AS total FROM follow WHERE following_id = ?',
+            [usuarioId]
+        );
+        // COUNT vem como número no mysql2, mas a conversão explícita protege
+        // contra variação de driver e deixa o tipo evidente para quem lê.
+        return Number(total);
+    }
 }
 
 module.exports = UsuariosRepository

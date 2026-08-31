@@ -71,4 +71,36 @@ async function buscar(req, res, next) {
     }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil, buscar };
+
+/**
+ * POST /users/:alias/follow — passa a seguir o usuário.
+ *
+ * Quem segue vem do token (req.userId); quem é seguido vem da URL. A
+ * assimetria é a regra de sempre: a identidade não é algo que o cliente
+ * possa afirmar, o alvo da ação é.
+ */
+async function seguir(req, res, next) {
+    try {
+        const resultado = await usuariosService.alternarSeguir(req.params.alias, req.userId, true);
+        res.status(200).json(resultado);
+    } catch (err) {
+        next(err);
+    }
+}
+
+/**
+ * DELETE /users/:alias/follow — deixa de seguir.
+ *
+ * Idêntica à anterior exceto pelo último argumento. A regra é a mesma; o
+ * que muda é a intenção, e quem expressa intenção é o verbo HTTP.
+ */
+async function deixarDeSeguir(req, res, next) {
+    try {
+        const resultado = await usuariosService.alternarSeguir(req.params.alias, req.userId, false);
+        res.status(200).json(resultado);
+    } catch (err) {
+        next(err);
+    }
+}
+
+module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil, buscar, seguir, deixarDeSeguir };

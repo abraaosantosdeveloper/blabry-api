@@ -1,3 +1,4 @@
+const { v7: uuidv7 } = require('uuid')
 const pool = require('../database')
 const UsuariosRepository = require('../repositories/usuarios_repository')
 const CountriesRepository = require('../repositories/countries_repository') 
@@ -204,4 +205,55 @@ async function buscar({ usuarioId, q, pagina, limite } = {}) {
     }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarPerfil, buscar }
+
+/* ------------------------------------------------------------------
+   Seguir e deixar de seguir
+   ------------------------------------------------------------------ */
+
+/**
+ * Passa a seguir, ou deixa de seguir, o usuário identificado pelo @.
+ *
+ * Devolve o estado recontado no banco. O cliente faz atualização otimista —
+ * inverte o botão na hora para a interface responder de imediato — e depois
+ * reconcilia com estes números, que são a verdade.
+ *
+ * @param {string}  alias     o @ de quem será seguido, vindo da URL
+ * @param {string}  usuarioId quem está seguindo, vindo do token
+ * @param {boolean} seguir    true para seguir, false para deixar de seguir
+ * @returns {Promise<{seguindo: boolean, seguidores: number}>}
+ */
+async function alternarSeguir(alias, usuarioId, seguir) {
+    // O @ é opcional na URL: aceita tanto "abraao" quanto "@abraao".
+    const apelido = String(alias ?? '').trim().replace(/^@/, '')
+
+    if (!apelido) throw erro('Usuário não informado', 400)
+
+    // Primeiro traduz o @ em id: as tabelas de relacionamento guardam
+    // identificadores, não apelidos.
+    const seguidoId = await usuariosRepository.buscarIdPorAlias(apelido)
+
+    // Alias inexistente, ou conta excluída, resultam em 404.
+    if (!seguidoId) throw erro('Usuário não encontrado', 404)
+
+    // Seguir a si mesmo não faz sentido e sujaria os contadores do perfil.
+    // A restrição UNIQUE não pega este caso, porque o par seria válido.
+    if (seguidoId === usuarioId)
+        throw erro('Você não pode seguir a si mesmo', 400)
+
+    if (seguir) {
+        // O id da linha é gerado aqui, no serviço, como fazemos com usuário
+        // e publicação — o repositório não inventa identificadores.
+        await usuariosRepository.seguir(uuidv7(), usuarioId, seguidoId)
+    } else {
+        await usuariosRepository.deixarDeSeguir(usuarioId, seguidoId)
+    }
+
+    return {
+        seguindo: seguir,
+        // Recontado, e não incrementado: se duas pessoas seguirem ao mesmo
+        // tempo, o número final é o do banco.
+        seguidores: await usuariosRepository.contarSeguidores(seguidoId),
+    }
+}
+
+module.exports = { meuPerfil, perfilPorAlias, atualizarPerfil, buscar, alternarSeguir }
