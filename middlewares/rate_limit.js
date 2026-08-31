@@ -27,9 +27,33 @@ const LIMPEZA_MS = 10 * 60 * 1000;
  * @param {number}   opcoes.maximo     requisições permitidas por janela
  * @param {string}   opcoes.mensagem   texto devolvido ao estourar
  * @param {(req) => string} [opcoes.chave] como identificar o cliente
+ * @param {boolean} [opcoes.desativado] devolve um middleware que não limita
  * @returns {import('express').RequestHandler}
  */
-function limitarRequisicoes({ janelaMs, maximo, mensagem, chave = (req) => req.ip }) {
+function limitarRequisicoes({
+  janelaMs,
+  maximo,
+  mensagem,
+  chave = (req) => req.ip,
+  /* Sob teste o limitador não age.
+
+     A suíte de rotas faz dezenas de requisições do mesmo endereço em
+     segundos, que é exatamente o padrão que ele existe para barrar. Ligado,
+     ele derruba o preparo dos cenários e a falha aparece longe da causa.
+
+     É um parâmetro, e não uma checagem escondida lá dentro, por dois
+     motivos: quem lê a chamada vê que existe um caso em que o limite não
+     vale, e a suíte do próprio limitador consegue ligá-lo passando
+     `desativado: false` — sem isso ela testaria um middleware inerte, que
+     foi precisamente o que aconteceu na primeira tentativa.
+
+     O risco residual é `NODE_ENV=test` em produção deixar a API sem limite.
+     No Railway a variável é `production`, e um valor errado ali já quebraria
+     o mascaramento de erro antes de chegar aqui. */
+  desativado = process.env.NODE_ENV === 'test',
+}) {
+  // Nem o temporizador de limpeza é criado quando não há o que limpar.
+  if (desativado) return (req, res, next) => next();
   /** chave -> { contagem, expiraEm } */
   const baldes = new Map();
 
@@ -44,19 +68,6 @@ function limitarRequisicoes({ janelaMs, maximo, mensagem, chave = (req) => req.i
   relogio.unref();
 
   return (req, res, next) => {
-    /* Sob teste o limitador não age.
-
-       Não é conveniência: a suíte roda dezenas de requisições do mesmo
-       endereço em segundos, que é exatamente o padrão que o limitador
-       existe para barrar. Mantê-lo ligado faria os testes de autenticação
-       falharem por 429 — e, pior, o primeiro 429 derruba o preparo do
-       cenário, então a falha aparece longe da causa.
-
-       O comportamento do limitador não fica sem cobertura: ele tem suíte
-       própria em tests/middlewares/rate_limit.test.js, que exercita limite,
-       isolamento por chave, expiração da janela e Retry-After. */
-    if (process.env.NODE_ENV === 'test') return next();
-
     const agora = Date.now();
     const k = chave(req);
     let balde = baldes.get(k);

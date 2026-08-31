@@ -1,4 +1,9 @@
-const { limitarRequisicoes } = require('../../middlewares/rate_limit');
+const { limitarRequisicoes: criarLimitador } = require('../../middlewares/rate_limit');
+
+/* O limitador vem desativado sob NODE_ENV=test, para não derrubar as suítes
+   de rota. Aqui ele é o objeto do teste, então é ligado explicitamente —
+   sem isto, todos os casos abaixo passariam contra um middleware inerte. */
+const limitarRequisicoes = (opcoes) => criarLimitador({ ...opcoes, desativado: false });
 
 /** Requisição mínima: o limitador só olha o IP. */
 const req = (ip) => ({ ip });
