@@ -1,10 +1,16 @@
 const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
 const PostRepository = require('../repositories/post_repository');
+const UsuariosRepository = require('../repositories/usuarios_repository');
 const Post = require('../models/post');
 const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/janela_edicao');
 
 const postRepository = new PostRepository(pool);
+/* A listagem por autor precisa traduzir o @ em id, e essa tradução já vive
+   no repositório de usuários. Reaproveitar é melhor do que escrever um
+   segundo SELECT em user aqui dentro — o mesmo SQL em dois lugares é o
+   começo de duas regras divergentes. */
+const usuariosRepository = new UsuariosRepository(pool);
 
 const erro = (mensagem, status) =>
   Object.assign(new Error(mensagem), { status });
@@ -46,6 +52,75 @@ async function listar({ usuarioId, pagina, limite, q } = {}) {
   return {
     posts,
     pagina: paginaAtual,
+    totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
+    total,
+  };
+}
+
+/**
+ * Uma publicação específica, para a página dedicada do post.
+ *
+ * Recebe o id do visitante porque a resposta inclui `curtido` — se ele
+ * curtiu ou não. Esse dado é por observador, não do post.
+ *
+ * @param {string} id id da publicação
+ * @param {string} visitanteId id do usuário autenticado (vem do token)
+ * @returns {Promise<Post>}
+ */
+async function buscarPorId(id, visitanteId) {
+  // Sem id não há o que buscar. 400 e não 404: o problema é a requisição,
+  // não o recurso.
+  if (!id) throw erro('Publicação não informada', 400);
+
+  const post = await postRepository.buscarPorId(id, visitanteId);
+
+  // O repositório já filtra autores excluídos, então "não encontrado" aqui
+  // cobre tanto o post inexistente quanto o post de uma conta apagada — do
+  // ponto de vista de quem consulta, os dois casos são o mesmo.
+  if (!post) throw erro('Publicação não encontrada', 404);
+
+  return post;
+}
+
+/**
+ * Publicações de um autor, paginadas — alimenta a seção de posts do perfil.
+ *
+ * A conversão de "página" para "offset" acontece aqui, e não no repositório,
+ * porque são dois vocabulários distintos: a interface pensa em páginas, o
+ * banco pensa em deslocamento de linhas. Misturar os dois faz o repositório
+ * conhecer regras de apresentação.
+ *
+ * @param {{alias: string, visitanteId: string, pagina?: any, limite?: any}} opcoes
+ * @returns {Promise<{posts: Post[], pagina: number, totalPaginas: number, total: number}>}
+ */
+async function listarDoAutor({ alias, visitanteId, pagina, limite } = {}) {
+  if (!alias) throw erro('Usuário não informado', 400);
+
+  // O @ pode chegar com a arroba na frente, dependendo de onde o cliente o
+  // copiou. Ela nunca faz parte do valor armazenado.
+  const apelido = String(alias).replace(/^@/, '');
+
+  const autorId = await usuariosRepository.buscarIdPorAlias(apelido);
+
+  // Perfil inexistente é 404 aqui, e não uma lista vazia: lista vazia diria
+  // "esse usuário não publicou nada", o que é uma afirmação diferente.
+  if (!autorId) throw erro('Usuário não encontrado', 404);
+
+  const paginaAtual = inteiroNaFaixa(pagina, { padrao: 1, minimo: 1, maximo: Number.MAX_SAFE_INTEGER });
+  const porPagina = inteiroNaFaixa(limite, { padrao: LIMITE_PADRAO, minimo: 1, maximo: LIMITE_MAXIMO });
+
+  const { posts, total } = await postRepository.listarDoAutor({
+    autorId,
+    visitanteId,
+    limite: porPagina,
+    offset: (paginaAtual - 1) * porPagina,
+  });
+
+  return {
+    posts,
+    pagina: paginaAtual,
+    // Math.max(1, ...) para que uma lista vazia informe 1 página, e não 0:
+    // "página 1 de 0" não faz sentido para quem lê a interface.
     totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
     total,
   };
@@ -139,4 +214,4 @@ async function alternarCurtida(postId, usuarioId, curtir) {
   };
 }
 
-module.exports = { listar, criar, excluir, editar, alternarCurtida };
+module.exports = { listar, buscarPorId, listarDoAutor, criar, excluir, editar, alternarCurtida };

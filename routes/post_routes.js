@@ -344,6 +344,42 @@ router.delete('/:id/comments/:comentarioId', commentController.excluir);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Erro' }
  */
+/**
+ * @swagger
+ * /posts/{id}:
+ *   get:
+ *     tags: [Publicações]
+ *     summary: Detalha uma publicação
+ *     description: |
+ *       Alimenta a página dedicada da publicação. Devolve o mesmo formato
+ *       usado no feed — post, autor e agregados — para que a interface não
+ *       precise de dois modelos diferentes para a mesma coisa.
+ *
+ *       `curtido` é relativo a quem consulta: indica se o usuário do token
+ *       curtiu esta publicação.
+ *
+ *       Publicações de contas excluídas respondem 404, e não uma versão
+ *       parcial: do ponto de vista de quem consulta, elas não existem.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: A publicação
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Post' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.get('/:id', postController.buscarPorId);
+
 router.patch('/:id', postController.editar);
 
 /**

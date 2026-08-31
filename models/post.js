@@ -8,7 +8,7 @@
 class Post {
   constructor({
     id, texto, criadoEm, editadoEm,
-    autorId, autorNome, autorAlias, autorFotoUrl,
+    autorId, autorNome, autorAlias, autorFotoUrl, autorBio,
     curtidas = 0, comentarios = 0, curtido = false,
   }) {
     this.id = id;
@@ -24,6 +24,11 @@ class Post {
       nome: autorNome,
       alias: autorAlias,
       fotoUrl: autorFotoUrl ?? null,
+      /* A bio acompanha o autor porque a página dedicada da publicação a
+         exibe: quem abre um link de post vindo de fora costuma não conhecer
+         quem escreveu. É dado público — o mesmo que o perfil já mostra a
+         qualquer visitante —, então não amplia nada do que já é visível. */
+      bio: autorBio ?? null,
     };
 
     Object.defineProperty(this, 'autorId', {
@@ -44,6 +49,7 @@ class Post {
       autorNome: linha.full_name,
       autorAlias: linha.alias,
       autorFotoUrl: linha.pic_url,
+      autorBio: linha.bio,
       curtidas: Number(linha.curtidas ?? 0),
       comentarios: Number(linha.comentarios ?? 0),
       curtido: Boolean(linha.curtido),

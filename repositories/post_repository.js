@@ -8,7 +8,7 @@ class PostRepository {
   /** Colunas do post e do autor, já com o JOIN. */
   static get COLUNAS() {
     return `p.id, p.user_id, p.content, p.created_at, p.edited_at,
-            u.full_name, u.alias, u.pic_url`;
+            u.full_name, u.alias, u.pic_url, u.bio`;
   }
 
   /**
@@ -129,6 +129,52 @@ class PostRepository {
     );
 
     return rows[0] ? Post.deLinha(rows[0]) : null;
+  }
+
+  /**
+   * Publicações de um autor específico, da mais recente para a mais antiga.
+   *
+   * É um método separado de `listar` de propósito. Poderia ser mais um
+   * parâmetro opcional lá, mas `listar` já carrega dois modos (feed e
+   * busca); um terceiro eixo tornaria o SQL montado condicionalmente em
+   * três lugares diferentes, e é assim que nasce um método que ninguém
+   * mais consegue ler. Aqui o WHERE é fixo e a consulta é direta.
+   *
+   * O autor é identificado por id, não por @: a tradução de @ para id é
+   * responsabilidade do service, que já precisa dela para responder 404
+   * quando o perfil não existe.
+   *
+   * @param {{autorId: string, visitanteId: string, limite?: number, offset?: number}} opcoes
+   * @returns {Promise<{posts: Post[], total: number}>}
+   */
+  async listarDoAutor({ autorId, visitanteId, limite = 10, offset = 0 }) {
+    // Mesma trava de `listar`: LIMIT/OFFSET são interpolados porque o MySQL
+    // não os aceita como placeholder, então precisam ser inteiros provados.
+    if (!Number.isInteger(limite) || !Number.isInteger(offset))
+      throw new TypeError('limite e offset devem ser inteiros');
+
+    const [rows] = await this.pool.execute(
+      `SELECT ${PostRepository.COLUNAS},
+              ${PostRepository.AGREGADOS}
+         FROM post p
+         JOIN user u ON u.id = p.user_id
+        WHERE p.user_id = ? AND u.deleted_at IS NULL
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT ${limite} OFFSET ${offset}`,
+      // `visitanteId` vem primeiro porque o "?" dos AGREGADOS (o EXISTS que
+      // diz se o visitante curtiu) aparece antes do "?" do WHERE no SQL.
+      [visitanteId, autorId]
+    );
+
+    const [[{ total }]] = await this.pool.execute(
+      `SELECT COUNT(*) AS total
+         FROM post p
+         JOIN user u ON u.id = p.user_id
+        WHERE p.user_id = ? AND u.deleted_at IS NULL`,
+      [autorId]
+    );
+
+    return { posts: rows.map(Post.deLinha), total: Number(total) };
   }
 
   /** Persiste um Post montado pelo service e o devolve já completo. */

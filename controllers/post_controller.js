@@ -15,6 +15,46 @@ async function listar(req, res, next) {
   }
 }
 
+/**
+ * GET /posts/:id — uma publicação específica.
+ *
+ * O controlador não decide nada: extrai o que veio da requisição, delega e
+ * traduz o resultado em resposta HTTP. A identidade vem de `req.userId`,
+ * posto ali pelo middleware de autenticação a partir do token — nunca do
+ * corpo ou da query, que o cliente controla.
+ */
+async function buscarPorId(req, res, next) {
+  try {
+    const post = await postService.buscarPorId(req.params.id, req.userId);
+    res.status(200).json(post);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /users/:alias/posts — publicações de um autor.
+ *
+ * Mora neste controlador, e não no de usuários, porque o recurso devolvido
+ * é publicação: quem mexer nas regras de post deve encontrar tudo em um
+ * lugar só. A rota é registrada no arquivo de usuários apenas porque o
+ * caminho começa por /users.
+ */
+async function listarDoAutor(req, res, next) {
+  try {
+    const { pagina, limite } = req.query;
+    const resultado = await postService.listarDoAutor({
+      alias: req.params.alias,
+      visitanteId: req.userId,
+      pagina,
+      limite,
+    });
+    res.status(200).json(resultado);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function criar(req, res, next) {
   try {
     const post = await postService.criar(req.userId, req.body?.texto);
@@ -58,4 +98,4 @@ async function descurtir(req, res, next) {
     next(err);
   }
 }
-module.exports = { listar, criar, editar, excluir, curtir, descurtir };
+module.exports = { listar, buscarPorId, listarDoAutor, criar, editar, excluir, curtir, descurtir };

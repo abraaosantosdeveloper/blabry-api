@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const usuariosController = require('../controllers/usuarios_controller');
+/* A rota de publicações do autor começa por /users, mas devolve publicações.
+   O controlador é o de post: quem mantém as regras de publicação encontra
+   tudo em um arquivo só. */
+const postController = require('../controllers/post_controller');
+/* A exclusão de conta e o código que a autoriza vivem no controlador de
+   autenticação: são operações sobre a credencial e a identidade, não sobre
+   o perfil. As rotas ficam aqui apenas porque o caminho começa por /users. */
+const authController = require('../controllers/auth_controller');
 
 const uploadUnico = require('../middlewares/upload');
 
@@ -233,6 +241,99 @@ router.get('/me', usuariosController.meuPerfil);
 
 /**
  * @swagger
+ * /users/me/exclusao/codigo:
+ *   post:
+ *     tags: [Usuários]
+ *     summary: Envia o código que autoriza excluir a conta
+ *     description: |
+ *       Exige token: excluir é ação do dono da sessão, não de quem conhece
+ *       um endereço de e-mail.
+ *
+ *       O destino é lido do banco a partir do token, nunca aceito do corpo
+ *       da requisição — aceitá-lo permitiria mandar o código de exclusão de
+ *       uma conta para outro endereço.
+ *
+ *       A resposta traz o e-mail mascarado (`a*****@gmail.com`) para a
+ *       interface confirmar o destino sem escrever o endereço inteiro em uma
+ *       tela que pode estar sendo vista por outra pessoa.
+ *     responses:
+ *       200:
+ *         description: Código enviado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok: { type: boolean, example: true }
+ *                 email: { type: string, example: 'a*****@gmail.com' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       429:
+ *         description: Novo código pedido cedo demais
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.post('/me/exclusao/codigo', authController.solicitarExclusao);
+
+/**
+ * @swagger
+ * /users/me:
+ *   delete:
+ *     tags: [Usuários]
+ *     summary: Exclui a conta autenticada
+ *     description: |
+ *       Duas provas são exigidas: o token (é a sessão do dono) e o código
+ *       enviado ao e-mail (o dono está de fato ali, e não alguém em um
+ *       computador deixado aberto). Para uma ação irreversível, uma prova só
+ *       é pouco.
+ *
+ *       A exclusão é **lógica** — preenche `deleted_at`. Todas as consultas
+ *       do sistema já filtram por `deleted_at IS NULL`, então a conta some
+ *       da aplicação no mesmo instante: ela desaparece do feed, da busca, dos
+ *       perfis e das listas de seguidores.
+ *
+ *       A alternativa, `DELETE` físico, arrastaria em cascata publicações,
+ *       comentários e curtidas — inclusive comentários de terceiros em
+ *       publicações do usuário, apagando conteúdo de quem não pediu nada.
+ *
+ *       O código pode vir no corpo ou na query: `DELETE` com corpo é aceito
+ *       pelo Express, mas nem todo cliente HTTP o envia.
+ *     parameters:
+ *       - name: codigo
+ *         in: query
+ *         required: false
+ *         schema: { type: string, pattern: '^[0-9]{6}$' }
+ *         description: Alternativa ao corpo, para clientes que não enviam corpo em DELETE.
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               codigo: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
+ *     responses:
+ *       204:
+ *         description: Conta excluída
+ *       400:
+ *         description: Código inválido ou expirado
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.delete('/me', authController.excluirConta);
+
+/**
+ * @swagger
  * /users/{alias}:
  *   get:
  *     tags: [Usuários]
@@ -319,6 +420,53 @@ router.get('/me', usuariosController.meuPerfil);
  */
 router.post('/:alias/follow', usuariosController.seguir);
 router.delete('/:alias/follow', usuariosController.deixarDeSeguir);
+
+/**
+ * @swagger
+ * /users/{alias}/posts:
+ *   get:
+ *     tags: [Publicações]
+ *     summary: Lista as publicações de um usuário
+ *     description: |
+ *       Alimenta a seção de publicações do perfil, tanto no próprio perfil
+ *       quanto no de outra pessoa — a resposta é a mesma nos dois casos,
+ *       porque publicação é conteúdo público.
+ *
+ *       Ordem cronológica decrescente. `curtido` é relativo ao usuário do
+ *       token.
+ *
+ *       Perfil inexistente responde 404 — e não uma lista vazia, que
+ *       afirmaria algo diferente ("existe, mas não publicou nada").
+ *     parameters:
+ *       - name: alias
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *         description: O @ do usuário, com ou sem a arroba.
+ *         example: abraao
+ *       - $ref: '#/components/parameters/Pagina'
+ *       - $ref: '#/components/parameters/Limite'
+ *     responses:
+ *       200:
+ *         description: Página de publicações do autor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - type: object
+ *                   properties:
+ *                     posts:
+ *                       type: array
+ *                       items: { $ref: '#/components/schemas/Post' }
+ *                 - $ref: '#/components/schemas/Paginacao'
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ *       500:
+ *         $ref: '#/components/responses/ErroInterno'
+ */
+router.get('/:alias/posts', postController.listarDoAutor);
 
 router.get('/:alias', usuariosController.perfilPorAlias);
 
