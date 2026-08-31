@@ -12,7 +12,7 @@ async function updatePhoto(req, res, next) {
 
 async function myProfile(req, res, next) {
   try {
-    const profile = await usersService.meuPerfil(req.userId);
+    const profile = await usersService.myProfile(req.userId);
     res.status(200).json(profile);
   } catch (err) {
     next(err);
@@ -21,7 +21,7 @@ async function myProfile(req, res, next) {
 
 async function profileByAlias(req, res, next) {
   try {
-    const profile = await usersService.perfilPorAlias(req.params.alias, req.userId);
+    const profile = await usersService.profileByAlias(req.params.alias, req.userId);
     res.status(200).json(profile);
   } catch (err) {
     next(err);
@@ -30,7 +30,7 @@ async function profileByAlias(req, res, next) {
 
 async function updateProfile(req, res, next) {
   try {
-    const profile = await usersService.atualizarPerfil(req.userId, req.body);
+    const profile = await usersService.updateProfile(req.userId, req.body);
     res.status(200).json(profile);
   } catch (err) {
     next(err);
@@ -53,7 +53,7 @@ async function search(req, res, next) {
         // req.query traz os parâmetros da URL, todos como texto.
         const { q, page, limit } = req.query;
 
-        const result = await usersService.buscar({
+        const result = await usersService.search({
             // req.userId vem do middleware de autenticação, que o extraiu do
             // token. Nunca do corpo nem da URL: a identidade não é algo que o
             // cliente possa afirmar.

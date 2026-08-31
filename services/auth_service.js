@@ -19,7 +19,7 @@ const fail = (message, status) =>
 
 function generateToken(user) {
   return jwt.sign(
-    { id: user.id, name: user..name },
+    { id: user.id, name: user.name },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );

@@ -3,8 +3,8 @@ const request = require('supertest');
 
 // A rota é testada isolada do banco: o repositório é substituído.
 jest.mock('../../repositories/countries_repository', () =>
-  class CountriesRepositoryFalso {
-    async listarPaises() {
+  class CountriesRepositoryFake {
+    async listAll() {
       return [
         { country: 'AFG', name: 'Afeganistão' },
         { country: 'BRA', name: 'Brasil' },
@@ -37,6 +37,6 @@ describe('Proteção das rotas', () => {
     const res = await request(app).get('/rota-protegida-qualquer');
 
     expect(res.status).toBe(401);
-    expect(res.body).toHaveProperty('erro');
+    expect(res.body).toHaveProperty('error');
   });
 });

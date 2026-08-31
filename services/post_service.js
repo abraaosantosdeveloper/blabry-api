@@ -165,10 +165,10 @@ async function edit(id, userId, text) {
   if (!post) throw fail('Publicação não encontrada', 404);
   if (!post.belongsTo(userId)) throw fail('Você só pode edit suas próprias publicações', 403);
 
-  if (!withinWindow(post..createdAt))
+  if (!withinWindow(post.createdAt))
     throw fail(`A edição só é possível nos primeiros ${WINDOW_MINUTES} minutos`, 409);
 
-  if (content === post..text) return post;
+  if (content === post.text) return post;
 
   await postRepository.update(id, userId, content);
   return postRepository.findById(id, userId);

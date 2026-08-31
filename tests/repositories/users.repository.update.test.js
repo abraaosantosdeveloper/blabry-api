@@ -1,21 +1,21 @@
-const UsuariosRepository = require('../../repositories/users_repository');
+const UsersRepository = require('../../repositories/users_repository');
 
-function poolFalso(resultado = { affectedRows: 1 }) {
-  const chamadas = [];
+function fakePool(resultado = { affectedRows: 1 }) {
+  const calls = [];
   return {
-    chamadas,
+    calls,
     async execute(sql, params) {
-      chamadas.push({ sql, params });
+      calls.push({ sql, params });
       return [resultado];
     },
   };
 }
 
-describe('UsuariosRepository.atualizar — lista branca de colunas', () => {
+describe('UsersRepository.update — lista branca de colunas', () => {
   it('traduz os campos da API para as colunas do banco', async () => {
-    const pool = poolFalso();
-    await new UsuariosRepository(pool).atualizar('uuid-1', {
-      nome: 'Novo Nome',
+    const pool = fakePool();
+    await new UsersRepository(pool).update('uuid-1', {
+      name: 'Novo Nome',
       bio: 'Uma bio.',
     });
 
@@ -27,9 +27,9 @@ describe('UsuariosRepository.atualizar — lista branca de colunas', () => {
 
   /* Atribuição em massa — o teste mais importante deste arquivo */
   it('descarta campos que não estão na lista branca', async () => {
-    const pool = poolFalso();
-    await new UsuariosRepository(pool).atualizar('uuid-1', {
-      nome: 'Legítimo',
+    const pool = fakePool();
+    await new UsersRepository(pool).update('uuid-1', {
+      name: 'Legítimo',
       password_hash: '$2b$12$invasor',
       id: 'outro-uuid',
       deleted_at: '2020-01-01',
@@ -43,9 +43,9 @@ describe('UsuariosRepository.atualizar — lista branca de colunas', () => {
   });
 
   it('ignora propriedades herdadas do protótipo', async () => {
-    const pool = poolFalso();
-    await new UsuariosRepository(pool).atualizar('uuid-1', {
-      nome: 'Legítimo',
+    const pool = fakePool();
+    await new UsersRepository(pool).update('uuid-1', {
+      name: 'Legítimo',
       constructor: 'x',
       toString: 'y',
     });
@@ -54,16 +54,16 @@ describe('UsuariosRepository.atualizar — lista branca de colunas', () => {
   });
 
   it('não executa consulta quando nenhum campo é válido', async () => {
-    const pool = poolFalso();
-    const linhas = await new UsuariosRepository(pool).atualizar('uuid-1', { hackeado: true });
+    const pool = fakePool();
+    const rows = await new UsersRepository(pool).update('uuid-1', { hackeado: true });
 
-    expect(linhas).toBe(0);
+    expect(rows).toBe(0);
     expect(pool.chamadas).toHaveLength(0);
   });
 
   it('restringe a atualização ao próprio usuário e ignora contas excluídas', async () => {
-    const pool = poolFalso();
-    await new UsuariosRepository(pool).atualizar('uuid-1', { bio: 'x' });
+    const pool = fakePool();
+    await new UsersRepository(pool).update('uuid-1', { bio: 'x' });
 
     const sql = pool.chamadas[0].sql.replace(/\s+/g, ' ');
     expect(sql).toContain('WHERE id = ?');
@@ -71,10 +71,10 @@ describe('UsuariosRepository.atualizar — lista branca de colunas', () => {
   });
 });
 
-describe('UsuariosRepository.emailEmUso', () => {
+describe('UsersRepository.emailInUse', () => {
   it('exclui o próprio usuário da checagem', async () => {
-    const pool = poolFalso([]);
-    await new UsuariosRepository(pool).emailEmUso('a@b.c', 'uuid-1');
+    const pool = fakePool([]);
+    await new UsersRepository(pool).emailInUse('a@b.c', 'uuid-1');
 
     expect(pool.chamadas[0].sql).toContain('id <> ?');
     expect(pool.chamadas[0].params).toEqual(['a@b.c', 'uuid-1']);

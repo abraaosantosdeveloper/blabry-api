@@ -2,50 +2,50 @@ const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const USUARIO_ID = '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90';
+const USER_ID = '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90';
 const EMAIL = 'abraao@exemplo.com';
-const CODIGO = '048213';
+const CODE = '048213';
 
 /* O prefixo "mock" é obrigatório: a fábrica do jest.mock() é içada para o
    topo do arquivo, antes das declarações, e só variáveis com esse prefixo
    podem ser referenciadas lá dentro. */
-const mockEstado = {
-  usuario: null,        // o que o AuthRepository devolve
-  codigoAtivo: null,    // o que VerificacaoRepository.buscarAtivo devolve
-  segundosDesdeUltimo: null,
-  emailsEnviados: [],   // { para, proposito }
-  confirmados: [],      // ids passados a confirmarEmail
-  senhasTrocadas: [],   // { usuarioId, hash }
-  excluidos: [],        // ids passados a excluirConta
-  tentativas: [],       // ids de códigos com tentativa registrada
-  consumidos: [],       // ids de códigos consumidos
-  criados: [],          // códigos emitidos
-  consumirRetorna: 1,   // linhas afetadas por consumir()
+const mockState = {
+  user: null,        // o que o AuthRepository devolve
+  activeCode: null,    // o que VerificacaoRepository.findActive devolve
+  secondsSinceLast: null,
+  sentEmails: [],   // { para, purpose }
+  confirmed: [],      // ids passados a confirmarEmail
+  changedPasswords: [],   // { userId, hash }
+  deleted: [],        // ids passados a excluirConta
+  attempts: [],       // ids de códigos com tentativa registrada
+  consumed: [],       // ids de códigos consumed
+  created: [],          // códigos emitidos
+  consumeReturns: 1,   // rows afetadas por consumir()
 };
 
 jest.mock('../../repositories/auth_repository', () =>
-  class AuthRepositoryFalso {
-    async buscarPorEmail(email) {
-      return mockEstado.usuario?.email === email ? mockEstado.usuario : null;
+  class AuthRepositoryFake {
+    async findByEmail(email) {
+      return mockState.user?.email === email ? mockState.user : null;
     }
-    async buscarPorId(id) {
-      return mockEstado.usuario?.id === id ? mockEstado.usuario : null;
+    async findById(id) {
+      return mockState.user?.id === id ? mockState.user : null;
     }
-    async buscarPorApelido() { return null; }
-    async confirmarEmail(id) { mockEstado.confirmados.push(id); return 1; }
-    async atualizarSenha(usuarioId, hash) { mockEstado.senhasTrocadas.push({ usuarioId, hash }); return 1; }
-    async excluirConta(id) { mockEstado.excluidos.push(id); return 1; }
+    async findByAlias() { return null; }
+    async confirmEmail(id) { mockState.confirmados.push(id); return 1; }
+    async updatePassword(userId, hash) { mockState.senhasTrocadas.push({ userId, hash }); return 1; }
+    async deleteAccount(id) { mockState.excluidos.push(id); return 1; }
   }
 );
 
 jest.mock('../../repositories/verification_repository', () =>
-  class VerificacaoRepositoryFalso {
-    async criar(dados) { mockEstado.criados.push(dados); }
-    async buscarAtivo() { return mockEstado.codigoAtivo; }
-    async segundosDesdeUltimo() { return mockEstado.segundosDesdeUltimo; }
-    async registrarTentativa(id) { mockEstado.tentativas.push(id); }
-    async consumir(id) { mockEstado.consumidos.push(id); return mockEstado.consumirRetorna; }
-    async invalidarPendentes() { }
+  class VerificationRepositoryFake {
+    async create(dados) { mockState.criados.push(dados); }
+    async findActive() { return mockState.codigoAtivo; }
+    async secondsSinceLast() { return mockState.segundosDesdeUltimo; }
+    async registerAttempt(id) { mockState.attempts.push(id); }
+    async consume(id) { mockState.consumidos.push(id); return mockState.consumirRetorna; }
+    async invalidatePending() { }
   }
 );
 
@@ -55,85 +55,85 @@ jest.mock('../../repositories/verification_repository', () =>
 jest.mock('../../config/email', () => ({
   MODO_CONSOLE: true,
   REMETENTE: 'Blabry <teste@exemplo.com>',
-  enviarEmail: jest.fn(async ({ para }) => { mockEstado.emailsEnviados.push({ para }); }),
+  enviarEmail: jest.fn(async ({ para }) => { mockState.emailsEnviados.push({ para }); }),
 }));
 
 jest.mock('../../repositories/countries_repository', () =>
-  class CountriesRepositoryFalso { async listarPaises() { return []; } }
+  class CountriesRepositoryFake { async listAll() { return []; } }
 );
-jest.mock('../../repositories/post_repository', () => class PostRepositoryFalso {});
-jest.mock('../../repositories/comment_repository', () => class CommentRepositoryFalso {});
-jest.mock('../../repositories/users_repository', () => class UsuariosRepositoryFalso {});
+jest.mock('../../repositories/post_repository', () => class PostRepositoryFake {});
+jest.mock('../../repositories/comment_repository', () => class CommentRepositoryFake {});
+jest.mock('../../repositories/users_repository', () => class UsersRepositoryFake {});
 
 const app = require('../../server');
 
 const token = () =>
-  jwt.sign({ id: USUARIO_ID, nome: 'Abraão' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  jwt.sign({ id: USER_ID, name: 'Abraão' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 /**
  * Usuário falso com a mesma interface que o serviço consome.
  *
- * `emailVerificado` é um getter no modelo real; aqui é um valor simples,
+ * `emailVerified` é um getter no modelo real; aqui é um valor simples,
  * porque o que importa ao teste é a resposta, não a derivação.
  */
-const usuarioFalso = ({ verificado = false } = {}) => ({
-  id: USUARIO_ID,
-  nome: 'Abraão Santos',
+const fakeUser = ({ verificado = false } = {}) => ({
+  id: USER_ID,
+  name: 'Abraão Santos',
   email: EMAIL,
-  emailVerificado: verificado,
-  async verificarSenha(senha) { return senha === 'SenhaForte#1'; },
+  emailVerified: verificado,
+  async verifyPassword(password) { return password === 'SenhaForte#1'; },
 });
 
-/** Código ativo com o hash do CODIGO conhecido pelo teste. */
-const codigoAtivoFalso = async () => ({
-  id: 'codigo-1',
-  codigoHash: await bcrypt.hash(CODIGO, 8),
-  tentativas: 0,
+/** Código ativo com o hash do CODE conhecido pelo teste. */
+const fakeActiveCode = async () => ({
+  id: 'code-1',
+  codeHash: await bcrypt.hash(CODE, 8),
+  attempts: 0,
 });
 
 beforeEach(() => {
-  mockEstado.usuario = null;
-  mockEstado.codigoAtivo = null;
-  mockEstado.segundosDesdeUltimo = null;
-  mockEstado.emailsEnviados = [];
-  mockEstado.confirmados = [];
-  mockEstado.senhasTrocadas = [];
-  mockEstado.excluidos = [];
-  mockEstado.tentativas = [];
-  mockEstado.consumidos = [];
-  mockEstado.criados = [];
-  mockEstado.consumirRetorna = 1;
+  mockState.user = null;
+  mockState.codigoAtivo = null;
+  mockState.segundosDesdeUltimo = null;
+  mockState.emailsEnviados = [];
+  mockState.confirmados = [];
+  mockState.senhasTrocadas = [];
+  mockState.excluidos = [];
+  mockState.attempts = [];
+  mockState.consumidos = [];
+  mockState.criados = [];
+  mockState.consumirRetorna = 1;
 });
 
 /* ---------------- Login bloqueado até a confirmação ---------------- */
 
 describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
   /* Dado: uma conta criada mas com o e-mail ainda não confirmado;
-     Quando: o usuário tenta entrar com a senha correta;
+     Quando: o usuário tenta entrar com a password correta;
      Então: a API responde 403, e não 401 — a interface precisa distinguir
-     "senha errada" de "falta confirmar" para levá-lo à tela de código. */
+     "password errada" de "falta confirmar" para levá-lo à tela de código. */
   it('recusa com 403 quando o e-mail não foi confirmado', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
+    mockState.user = fakeUser({ verificado: false });
 
     const res = await request(app)
       .post('/auth/login')
-      .send({ email: EMAIL, senha: 'SenhaForte#1' });
+      .send({ email: EMAIL, password: 'SenhaForte#1' });
 
     expect(res.status).toBe(403);
     expect(res.body).not.toHaveProperty('token');
   });
 
   /* Dado: a mesma conta não confirmada;
-     Quando: a senha informada está errada;
+     Quando: a password informada está errada;
      Então: a resposta é 401, e não 403. A ordem das checagens importa: se
-     a confirmação fosse checada antes da senha, bastaria digitar um e-mail
+     a confirmação fosse checada antes da password, bastaria digitar um e-mail
      qualquer para descobrir se ele tem conta aqui. */
-  it('prioriza 401 quando a senha está errada', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
+  it('prioriza 401 quando a password está errada', async () => {
+    mockState.user = fakeUser({ verificado: false });
 
     const res = await request(app)
       .post('/auth/login')
-      .send({ email: EMAIL, senha: 'errada' });
+      .send({ email: EMAIL, password: 'errada' });
 
     expect(res.status).toBe(401);
   });
@@ -142,11 +142,11 @@ describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
      Quando: as credenciais estão corretas;
      Então: 200 com token. */
   it('autentica quando o e-mail está confirmado', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
+    mockState.user = fakeUser({ verificado: true });
 
     const res = await request(app)
       .post('/auth/login')
-      .send({ email: EMAIL, senha: 'SenhaForte#1' });
+      .send({ email: EMAIL, password: 'SenhaForte#1' });
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('token');
@@ -155,22 +155,22 @@ describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
 
 /* ---------------- Confirmação de e-mail ---------------- */
 
-describe('POST /auth/verificar-email', () => {
+describe('POST /auth/verify-email', () => {
   /* Dado: um código válido recebido por e-mail;
      Quando: o usuário o informa;
      Então: o e-mail é marcado como confirmado e a API devolve o token —
      pedir login logo após digitar o código seria um obstáculo sem função. */
   it('confirma o e-mail e devolve o token', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+    mockState.user = fakeUser({ verificado: false });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .post('/auth/verificar-email')
-      .send({ email: EMAIL, codigo: CODIGO });
+      .post('/auth/verify-email')
+      .send({ email: EMAIL, code: CODE });
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('token');
-    expect(mockEstado.confirmados).toEqual([USUARIO_ID]);
+    expect(mockState.confirmados).toEqual([USER_ID]);
   });
 
   /* Dado: um código errado;
@@ -178,69 +178,69 @@ describe('POST /auth/verificar-email', () => {
      Então: 400, o e-mail não é confirmado, e a tentativa é contabilizada —
      é ela que torna o chute caro. */
   it('recusa código errado e registra a tentativa', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+    mockState.user = fakeUser({ verificado: false });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .post('/auth/verificar-email')
-      .send({ email: EMAIL, codigo: '999999' });
+      .post('/auth/verify-email')
+      .send({ email: EMAIL, code: '999999' });
 
     expect(res.status).toBe(400);
-    expect(mockEstado.confirmados).toHaveLength(0);
-    expect(mockEstado.tentativas).toEqual(['codigo-1']);
+    expect(mockState.confirmados).toHaveLength(0);
+    expect(mockState.attempts).toEqual(['code-1']);
   });
 
   /* Dado: um código com formato inválido (letras, tamanho errado);
      Quando: informado;
      Então: 400 sem nem consultar o banco — recusar lixo cedo evita gastar
-     uma comparação bcrypt e uma das tentativas do usuário. */
+     uma comparação bcrypt e uma das attempts do usuário. */
   it.each([['curto', '1234'], ['letras', 'abcdef'], ['vazio', '']])(
     'recusa código %s sem consultar o repositório',
-    async (_rotulo, codigo) => {
-      mockEstado.usuario = usuarioFalso({ verificado: false });
-      mockEstado.codigoAtivo = await codigoAtivoFalso();
+    async (_rotulo, code) => {
+      mockState.user = fakeUser({ verificado: false });
+      mockState.codigoAtivo = await fakeActiveCode();
 
       const res = await request(app)
-        .post('/auth/verificar-email')
-        .send({ email: EMAIL, codigo });
+        .post('/auth/verify-email')
+        .send({ email: EMAIL, code });
 
       expect(res.status).toBe(400);
-      expect(mockEstado.tentativas).toHaveLength(0);
+      expect(mockState.attempts).toHaveLength(0);
     }
   );
 
   /* Dado: nenhum código ativo (expirou, já foi usado ou estourou as
-     tentativas);
+     attempts);
      Quando: um código é informado;
      Então: 400 com a mesma mensagem dos demais casos. Detalhar qual dos
      três é diria a um atacante se vale a pena continuar. */
   it('responde 400 quando não há código ativo', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.codigoAtivo = null;
+    mockState.user = fakeUser({ verificado: false });
+    mockState.codigoAtivo = null;
 
     const res = await request(app)
-      .post('/auth/verificar-email')
-      .send({ email: EMAIL, codigo: CODIGO });
+      .post('/auth/verify-email')
+      .send({ email: EMAIL, code: CODE });
 
     expect(res.status).toBe(400);
   });
 
   /* Dado: duas requisições simultâneas com o mesmo código;
      Quando: a segunda tenta consumir um código já consumido (o UPDATE
-     afeta 0 linhas);
+     afeta 0 rows);
      Então: ela é recusada. Sem essa checagem haveria uma janela entre
      verificar e marcar, e as duas passariam. */
   it('recusa quando o código já foi consumido em paralelo', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
-    mockEstado.consumirRetorna = 0;
+    mockState.user = fakeUser({ verificado: false });
+    mockState.codigoAtivo = await fakeActiveCode();
+    mockState.consumirRetorna = 0;
 
     const res = await request(app)
-      .post('/auth/verificar-email')
-      .send({ email: EMAIL, codigo: CODIGO });
+      .post('/auth/verify-email')
+      .send({ email: EMAIL, code: CODE });
 
     expect(res.status).toBe(400);
-    expect(mockEstado.confirmados).toHaveLength(0);
+    expect(mockState.confirmados).toHaveLength(0);
   });
 
   /* Dado: um e-mail que não tem conta;
@@ -248,11 +248,11 @@ describe('POST /auth/verificar-email', () => {
      Então: a mesma resposta 400 de código errado — a rota não pode virar
      um verificador de quem está cadastrado aqui. */
   it('não revela se o e-mail existe', async () => {
-    mockEstado.usuario = null;
+    mockState.user = null;
 
     const res = await request(app)
-      .post('/auth/verificar-email')
-      .send({ email: 'ninguem@exemplo.com', codigo: CODIGO });
+      .post('/auth/verify-email')
+      .send({ email: 'ninguem@exemplo.com', code: CODE });
 
     expect(res.status).toBe(400);
   });
@@ -260,36 +260,36 @@ describe('POST /auth/verificar-email', () => {
 
 /* ---------------- Reenvio ---------------- */
 
-describe('POST /auth/verificar-email/reenviar', () => {
+describe('POST /auth/verify-email/resend', () => {
   /* Dado: uma conta não confirmada;
      Quando: o usuário pede um novo código;
      Então: um código é gravado e um e-mail sai. */
   it('emite um novo código', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
+    mockState.user = fakeUser({ verificado: false });
 
     const res = await request(app)
-      .post('/auth/verificar-email/reenviar')
+      .post('/auth/verify-email/resend')
       .send({ email: EMAIL });
 
     expect(res.status).toBe(200);
-    expect(mockEstado.criados).toHaveLength(1);
-    expect(mockEstado.emailsEnviados).toEqual([{ para: EMAIL }]);
+    expect(mockState.criados).toHaveLength(1);
+    expect(mockState.emailsEnviados).toEqual([{ para: EMAIL }]);
   });
 
   /* Dado: um código pedido há menos de 60 segundos;
      Quando: outro é pedido;
-     Então: 429 — o limite impede que a caixa de entrada de alguém seja
+     Então: 429 — o limit impede que a caixa de entrada de alguém seja
      usada como alvo de spam por quem conhece o e-mail. */
   it('recusa reenvio antes do intervalo mínimo', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.segundosDesdeUltimo = 10;
+    mockState.user = fakeUser({ verificado: false });
+    mockState.segundosDesdeUltimo = 10;
 
     const res = await request(app)
-      .post('/auth/verificar-email/reenviar')
+      .post('/auth/verify-email/resend')
       .send({ email: EMAIL });
 
     expect(res.status).toBe(429);
-    expect(mockEstado.criados).toHaveLength(0);
+    expect(mockState.criados).toHaveLength(0);
   });
 
   /* Dado: um e-mail sem conta, ou já confirmado;
@@ -299,87 +299,87 @@ describe('POST /auth/verificar-email/reenviar', () => {
   it.each([
     ['inexistente', null],
     ['já confirmado', 'verificado'],
-  ])('responde 200 sem enviar nada para e-mail %s', async (_rotulo, caso) => {
-    mockEstado.usuario = caso === 'verificado' ? usuarioFalso({ verificado: true }) : null;
+  ])('responde 200 sem enviar nada para e-mail %s', async (_rotulo, scenario) => {
+    mockState.user = scenario === 'verificado' ? fakeUser({ verificado: true }) : null;
 
     const res = await request(app)
-      .post('/auth/verificar-email/reenviar')
+      .post('/auth/verify-email/resend')
       .send({ email: EMAIL });
 
     expect(res.status).toBe(200);
-    expect(mockEstado.emailsEnviados).toHaveLength(0);
+    expect(mockState.emailsEnviados).toHaveLength(0);
   });
 });
 
-/* ---------------- Troca de senha ---------------- */
+/* ---------------- Troca de password ---------------- */
 
-describe('POST /auth/senha', () => {
-  /* Dado: um código válido e uma senha forte;
+describe('POST /auth/password', () => {
+  /* Dado: um código válido e uma password forte;
      Quando: a troca é pedida;
-     Então: o hash é gravado — e nunca a senha em texto. */
-  it('troca a senha e grava um hash', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+     Então: o hash é gravado — e nunca a password em text. */
+  it('troca a password e grava um hash', async () => {
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .post('/auth/senha')
-      .send({ email: EMAIL, codigo: CODIGO, novaSenha: 'NovaSenha#1' });
+      .post('/auth/password')
+      .send({ email: EMAIL, code: CODE, newPassword: 'NovaSenha#1' });
 
     expect(res.status).toBe(200);
-    expect(mockEstado.senhasTrocadas).toHaveLength(1);
-    expect(mockEstado.senhasTrocadas[0].hash).not.toBe('NovaSenha#1');
+    expect(mockState.senhasTrocadas).toHaveLength(1);
+    expect(mockState.senhasTrocadas[0].hash).not.toBe('NovaSenha#1');
     // bcrypt produz 60 caracteres começando por $2.
-    expect(mockEstado.senhasTrocadas[0].hash).toMatch(/^\$2[aby]\$/);
+    expect(mockState.senhasTrocadas[0].hash).toMatch(/^\$2[aby]\$/);
   });
 
-  /* Dado: uma senha que não atende à regra de força;
+  /* Dado: uma password que não atende à regra de força;
      Quando: a troca é pedida;
      Então: 400 e nada é gravado. A regra vale na API, não só na interface. */
   it.each([
     ['curta', 'Ab#1'],
     ['sem maiúscula', 'senhafraca#1'],
     ['sem caractere especial', 'SenhaFraca11'],
-  ])('recusa senha %s', async (_rotulo, novaSenha) => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+  ])('recusa password %s', async (_rotulo, newPassword) => {
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .post('/auth/senha')
-      .send({ email: EMAIL, codigo: CODIGO, novaSenha });
+      .post('/auth/password')
+      .send({ email: EMAIL, code: CODE, newPassword });
 
     expect(res.status).toBe(400);
-    expect(mockEstado.senhasTrocadas).toHaveLength(0);
+    expect(mockState.senhasTrocadas).toHaveLength(0);
   });
 
   /* Dado: uma conta ainda não confirmada;
-     Quando: a senha é trocada com código válido;
+     Quando: a password é trocada com código válido;
      Então: o e-mail também passa a confirmado — o usuário acabou de provar
      que tem acesso a ele, e exigir a mesma prova duas vezes não acrescenta
      segurança. */
-  it('confirma o e-mail junto com a troca de senha', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: false });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+  it('confirma o e-mail junto com a troca de password', async () => {
+    mockState.user = fakeUser({ verificado: false });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     await request(app)
-      .post('/auth/senha')
-      .send({ email: EMAIL, codigo: CODIGO, novaSenha: 'NovaSenha#1' });
+      .post('/auth/password')
+      .send({ email: EMAIL, code: CODE, newPassword: 'NovaSenha#1' });
 
-    expect(mockEstado.confirmados).toEqual([USUARIO_ID]);
+    expect(mockState.confirmados).toEqual([USER_ID]);
   });
 
   /* Dado: um código errado;
      Quando: a troca é pedida;
-     Então: 400 e a senha permanece. */
+     Então: 400 e a password permanece. */
   it('recusa código errado', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .post('/auth/senha')
-      .send({ email: EMAIL, codigo: '111111', novaSenha: 'NovaSenha#1' });
+      .post('/auth/password')
+      .send({ email: EMAIL, code: '111111', newPassword: 'NovaSenha#1' });
 
     expect(res.status).toBe(400);
-    expect(mockEstado.senhasTrocadas).toHaveLength(0);
+    expect(mockState.senhasTrocadas).toHaveLength(0);
   });
 });
 
@@ -392,15 +392,15 @@ describe('Exclusão de conta', () => {
      endereço mascarado — confirma o destino sem escrever o endereço
      inteiro em uma tela que outra pessoa pode estar vendo. */
   it('envia o código e devolve o e-mail mascarado', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
+    mockState.user = fakeUser({ verificado: true });
 
     const res = await request(app)
-      .post('/users/me/exclusao/codigo')
+      .post('/users/me/exclusao/code')
       .set('Authorization', `Bearer ${token()}`);
 
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('a*****@exemplo.com');
-    expect(mockEstado.emailsEnviados).toEqual([{ para: EMAIL }]);
+    expect(mockState.emailsEnviados).toEqual([{ para: EMAIL }]);
   });
 
   /* Dado: uma requisição sem token;
@@ -408,41 +408,41 @@ describe('Exclusão de conta', () => {
      Então: 401 e nenhum e-mail sai. Excluir é ação do dono da sessão, não
      de quem conhece um endereço. */
   it('exige autenticação para pedir o código', async () => {
-    const res = await request(app).post('/users/me/exclusao/codigo');
+    const res = await request(app).post('/users/me/exclusao/code');
 
     expect(res.status).toBe(401);
-    expect(mockEstado.emailsEnviados).toHaveLength(0);
+    expect(mockState.emailsEnviados).toHaveLength(0);
   });
 
   /* Dado: token válido e código válido;
      Quando: a exclusão é confirmada;
      Então: 204 e a conta é marcada como excluída. */
   it('exclui a conta com token e código válidos', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
       .delete('/users/me')
       .set('Authorization', `Bearer ${token()}`)
-      .send({ codigo: CODIGO });
+      .send({ code: CODE });
 
     expect(res.status).toBe(204);
-    expect(mockEstado.excluidos).toEqual([USUARIO_ID]);
+    expect(mockState.excluidos).toEqual([USER_ID]);
   });
 
   /* Dado: um cliente HTTP que não envia corpo em DELETE;
      Quando: o código vai na query;
      Então: funciona igual — a rota aceita as duas formas. */
   it('aceita o código pela query string', async () => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
-      .delete(`/users/me?codigo=${CODIGO}`)
+      .delete(`/users/me?code=${CODE}`)
       .set('Authorization', `Bearer ${token()}`);
 
     expect(res.status).toBe(204);
-    expect(mockEstado.excluidos).toEqual([USUARIO_ID]);
+    expect(mockState.excluidos).toEqual([USER_ID]);
   });
 
   /* Dado: token válido mas nenhum código, ou um código errado;
@@ -453,26 +453,26 @@ describe('Exclusão de conta', () => {
   it.each([
     ['sem código', undefined],
     ['código errado', '999999'],
-  ])('recusa a exclusão %s', async (_rotulo, codigo) => {
-    mockEstado.usuario = usuarioFalso({ verificado: true });
-    mockEstado.codigoAtivo = await codigoAtivoFalso();
+  ])('recusa a exclusão %s', async (_rotulo, code) => {
+    mockState.user = fakeUser({ verificado: true });
+    mockState.codigoAtivo = await fakeActiveCode();
 
     const res = await request(app)
       .delete('/users/me')
       .set('Authorization', `Bearer ${token()}`)
-      .send(codigo ? { codigo } : {});
+      .send(code ? { code } : {});
 
     expect(res.status).toBe(400);
-    expect(mockEstado.excluidos).toHaveLength(0);
+    expect(mockState.excluidos).toHaveLength(0);
   });
 
   /* Dado: uma requisição sem token;
      Quando: a exclusão é tentada;
      Então: 401. */
   it('exige autenticação para excluir', async () => {
-    const res = await request(app).delete('/users/me').send({ codigo: CODIGO });
+    const res = await request(app).delete('/users/me').send({ code: CODE });
 
     expect(res.status).toBe(401);
-    expect(mockEstado.excluidos).toHaveLength(0);
+    expect(mockState.excluidos).toHaveLength(0);
   });
 });

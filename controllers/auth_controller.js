@@ -32,7 +32,7 @@ async function login(req, res, next) {
  */
 async function resendSignupCode(req, res, next) {
   try {
-    const result = await authService.reenviarCodigoCadastro({ email: req.body?.email });
+    const result = await authService.resendSignupCode({ email: req.body?.email });
     res.json(result);
   } catch (err) {
     next(err);
@@ -43,7 +43,7 @@ async function resendSignupCode(req, res, next) {
 async function confirmEmail(req, res, next) {
   try {
     const { email, code } = req.body;
-    const result = await authService.confirmarEmail({ email, code });
+    const result = await authService.confirmEmail({ email, code });
     res.json(result);
   } catch (err) {
     next(err);
@@ -53,7 +53,7 @@ async function confirmEmail(req, res, next) {
 /** POST /auth/password/code — envia o código de troca de senha. */
 async function requestPasswordReset(req, res, next) {
   try {
-    const result = await authService.solicitarTrocaDeSenha({ email: req.body?.email });
+    const result = await authService.requestPasswordReset({ email: req.body?.email });
     res.json(result);
   } catch (err) {
     next(err);
@@ -64,7 +64,7 @@ async function requestPasswordReset(req, res, next) {
 async function resetPassword(req, res, next) {
   try {
     const { email, code, newPassword } = req.body;
-    const result = await authService.trocarSenha({ email, code, newPassword });
+    const result = await authService.resetPassword({ email, code, newPassword });
     res.json(result);
   } catch (err) {
     next(err);
@@ -80,7 +80,7 @@ async function resetPassword(req, res, next) {
  */
 async function requestAccountDeletion(req, res, next) {
   try {
-    const result = await authService.solicitarExclusao(req.userId);
+    const result = await authService.requestAccountDeletion(req.userId);
     res.json(result);
   } catch (err) {
     next(err);
@@ -90,11 +90,11 @@ async function requestAccountDeletion(req, res, next) {
 /** DELETE /users/me — exclui a conta autenticada mediante código. */
 async function deleteAccount(req, res, next) {
   try {
-    await authService.excluirConta({
+    await authService.deleteAccount({
       userId: req.userId,
       // O código pode vir no corpo ou na query: DELETE com corpo é aceito
       // pelo Express, mas nem todo cliente HTTP o envia.
-      code: req.body?..code ?? req.query?..code,
+      code: req.body?.code ?? req.query?.code,
     });
     res.status(204).end();
   } catch (err) {

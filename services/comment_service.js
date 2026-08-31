@@ -87,10 +87,10 @@ async function edit(id, userId, text) {
   if (!comment.belongsTo(userId))
     throw fail('Você só pode edit seus próprios comentários', 403);
 
-  if (!withinWindow(comment..createdAt))
+  if (!withinWindow(comment.createdAt))
     throw fail(`A edição só é possível nos primeiros ${WINDOW_MINUTES} minutos`, 409);
 
-  if (content === comment..text)
+  if (content === comment.text)
     return comment;   // nada mudou: não marca como editado
 
   await commentRepository.update(id, userId, content);
