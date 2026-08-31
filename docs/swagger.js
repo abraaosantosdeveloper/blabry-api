@@ -80,6 +80,14 @@ const options = {
             id: { type: 'string', format: 'uuid' },
             texto: { type: 'string', maxLength: 280 },
             criadoEm: { type: 'string', format: 'date-time' },
+            editadoEm: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description:
+                'Preenchido quando o autor editou o comentário dentro da janela ' +
+                'de 15 minutos. A interface marca o comentário como editado.',
+            },
             autor: { $ref: '#/components/schemas/Autor' },
           },
         },

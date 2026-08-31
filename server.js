@@ -43,6 +43,7 @@ app.use('/countries', require('./routes/countries_routes'));
 const autenticar = require('./middlewares/autentication');
 app.use(autenticar);
 app.use('/users', require('./routes/usuarios_routes'));
+app.use('/posts', require('./routes/post_routes'));
 
 // Middleware de erro
 app.use((err, req, res, next) => {
