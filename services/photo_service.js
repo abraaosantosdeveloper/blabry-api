@@ -1,6 +1,6 @@
 const cloudinary = require('../config/cloudinary');
 const pool = require('../database');
-const UsuariosRepository = require('../repositories/usuarios_repository');
+const UsuariosRepository = require('../repositories/users_repository');
 
 const usuariosRepository = new UsuariosRepository(pool);
 

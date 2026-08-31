@@ -1,9 +1,9 @@
 const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
 const PostRepository = require('../repositories/post_repository');
-const UsuariosRepository = require('../repositories/usuarios_repository');
+const UsuariosRepository = require('../repositories/users_repository');
 const Post = require('../models/post');
-const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/janela_edicao');
+const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/edit_window');
 
 const postRepository = new PostRepository(pool);
 /* A listagem por autor precisa traduzir o @ em id, e essa tradução já vive

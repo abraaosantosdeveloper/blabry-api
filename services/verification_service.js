@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
-const VerificacaoRepository = require('../repositories/verificacao_repository');
+const VerificacaoRepository = require('../repositories/verification_repository');
 const { enviarCodigo } = require('./email_service');
 const {
   PROPOSITOS,
@@ -10,7 +10,7 @@ const {
   gerarCodigo,
   expiraEm,
   formatoValido,
-} = require('../utils/codigo_verificacao');
+} = require('../utils/verification_code');
 
 const verificacaoRepository = new VerificacaoRepository(pool);
 

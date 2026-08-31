@@ -1,4 +1,4 @@
-const UsuariosRepository = require('../../repositories/usuarios_repository');
+const UsuariosRepository = require('../../repositories/users_repository');
 
 function poolFalso(resultado = { affectedRows: 1 }) {
   const chamadas = [];

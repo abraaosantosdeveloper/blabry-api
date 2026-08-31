@@ -3,7 +3,7 @@ const pool = require('../database');
 const CommentRepository = require('../repositories/comment_repository');
 const PostRepository = require('../repositories/post_repository');
 const Comment = require('../models/comment');
-const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/janela_edicao');
+const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/edit_window');
 
 const commentRepository = new CommentRepository(pool);
 const postRepository = new PostRepository(pool);

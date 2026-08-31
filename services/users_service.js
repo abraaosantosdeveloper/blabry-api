@@ -1,6 +1,6 @@
 const { v7: uuidv7 } = require('uuid')
 const pool = require('../database')
-const UsuariosRepository = require('../repositories/usuarios_repository')
+const UsuariosRepository = require('../repositories/users_repository')
 const CountriesRepository = require('../repositories/countries_repository') 
 const countriesRepository = new CountriesRepository(pool)
 

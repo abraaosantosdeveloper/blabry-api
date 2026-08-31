@@ -1,5 +1,5 @@
 const { enviarEmail } = require('../config/email');
-const { VALIDADE_MINUTOS } = require('../utils/codigo_verificacao');
+const { VALIDADE_MINUTOS } = require('../utils/verification_code');
 
 /**
  * Monta e envia os e-mails com código de verificação.

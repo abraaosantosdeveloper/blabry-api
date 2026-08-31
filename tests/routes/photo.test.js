@@ -23,7 +23,7 @@ jest.mock('../../config/cloudinary', () => ({
 
 const mockBanco = { linhasAfetadas: 1, url: null };
 
-jest.mock('../../repositories/usuarios_repository', () =>
+jest.mock('../../repositories/users_repository', () =>
   class UsuariosRepositoryFalso {
     async atualizarFoto(_id, url) {
       mockBanco.url = url;

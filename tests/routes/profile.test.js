@@ -31,7 +31,7 @@ function linhaBase() {
   };
 }
 
-jest.mock('../../repositories/usuarios_repository', () => {
+jest.mock('../../repositories/users_repository', () => {
   const User = require('../../models/user');
 
   return class UsuariosRepositoryFalso {

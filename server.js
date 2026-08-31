@@ -40,9 +40,9 @@ app.use('/auth', require('./routes/auth_routes'));
 app.use('/countries', require('./routes/countries_routes'));
 
 // Middleware de autenticação JWT
-const autenticar = require('./middlewares/autentication');
+const autenticar = require('./middlewares/authentication');
 app.use(autenticar);
-app.use('/users', require('./routes/usuarios_routes'));
+app.use('/users', require('./routes/users_routes'));
 app.use('/posts', require('./routes/post_routes'));
 
 // Middleware de erro

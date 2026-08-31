@@ -37,7 +37,7 @@ jest.mock('../../repositories/auth_repository', () =>
    cadastro e login, não o fluxo de verificação — que tem suíte própria em
    verificacao.test.js. Sem os mocks, o cadastro tentaria abrir conexão com
    o banco e chamar o provedor de e-mail. */
-jest.mock('../../repositories/verificacao_repository', () =>
+jest.mock('../../repositories/verification_repository', () =>
   class VerificacaoRepositoryFalso {
     async criar() { }
     async segundosDesdeUltimo() { return null; }

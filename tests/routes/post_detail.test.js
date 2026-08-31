@@ -34,7 +34,7 @@ jest.mock('../../repositories/post_repository', () =>
   }
 );
 
-jest.mock('../../repositories/usuarios_repository', () =>
+jest.mock('../../repositories/users_repository', () =>
   class UsuariosRepositoryFalso {
     async buscarIdPorAlias() { return mockEstado.idPorAlias; }
   }

@@ -12,7 +12,7 @@ const mockEstado = {
   chamadas: [],
 };
 
-jest.mock('../../repositories/usuarios_repository', () =>
+jest.mock('../../repositories/users_repository', () =>
   class UsuariosRepositoryFalso {
     async buscarIdPorAlias(alias) {
       return mockEstado.idPorAlias[alias] ?? null;

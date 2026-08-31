@@ -1,5 +1,5 @@
-const usuariosService = require('../services/usuarios_service');
-const fotoService = require('../services/foto_service');
+const usuariosService = require('../services/users_service');
+const fotoService = require('../services/photo_service');
 
 async function atualizarFoto(req, res, next) {
   try {

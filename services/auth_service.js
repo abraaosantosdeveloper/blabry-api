@@ -3,7 +3,7 @@ const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
 const AuthRepository = require('../repositories/auth_repository');
 const User = require('../models/user');
-const { solicitarCodigo, confirmarCodigo, PROPOSITOS } = require('./verificacao_service');
+const { solicitarCodigo, confirmarCodigo, PROPOSITOS } = require('./verification_service');
 
 const authRepository = new AuthRepository(pool);
 

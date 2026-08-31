@@ -12,7 +12,7 @@ const mockEstado = {
   total: 0,
 };
 
-jest.mock('../../repositories/usuarios_repository', () =>
+jest.mock('../../repositories/users_repository', () =>
   class UsuariosRepositoryFalso {
     async buscar(argumentos) {
       mockEstado.chamadas.push(argumentos);

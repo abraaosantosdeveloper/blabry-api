@@ -1,4 +1,4 @@
-const UsuariosRepository = require('../../repositories/usuarios_repository');
+const UsuariosRepository = require('../../repositories/users_repository');
 
 /** Pool falso: registra o que foi chamado e devolve linhas controladas. */
 function poolFalso(linhas = []) {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const usuariosController = require('../controllers/usuarios_controller');
+const usuariosController = require('../controllers/users_controller');
 /* A rota de publicações do autor começa por /users, mas devolve publicações.
    O controlador é o de post: quem mantém as regras de publicação encontra
    tudo em um arquivo só. */

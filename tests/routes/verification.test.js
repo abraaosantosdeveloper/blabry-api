@@ -38,7 +38,7 @@ jest.mock('../../repositories/auth_repository', () =>
   }
 );
 
-jest.mock('../../repositories/verificacao_repository', () =>
+jest.mock('../../repositories/verification_repository', () =>
   class VerificacaoRepositoryFalso {
     async criar(dados) { mockEstado.criados.push(dados); }
     async buscarAtivo() { return mockEstado.codigoAtivo; }
@@ -63,7 +63,7 @@ jest.mock('../../repositories/countries_repository', () =>
 );
 jest.mock('../../repositories/post_repository', () => class PostRepositoryFalso {});
 jest.mock('../../repositories/comment_repository', () => class CommentRepositoryFalso {});
-jest.mock('../../repositories/usuarios_repository', () => class UsuariosRepositoryFalso {});
+jest.mock('../../repositories/users_repository', () => class UsuariosRepositoryFalso {});
 
 const app = require('../../server');
 
