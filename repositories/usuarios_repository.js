@@ -64,9 +64,16 @@ class UsuariosRepository {
               (SELECT COUNT(*) FROM follow f WHERE f.following_id = u.id) AS seguidores,
               (SELECT COUNT(*) FROM follow f WHERE f.follower_id  = u.id) AS seguindo,
               EXISTS(SELECT 1 FROM follow f
-                     WHERE f.follower_id = ? AND f.following_id = u.id) AS seguindo_este
+                     WHERE f.follower_id = ? AND f.following_id = u.id) AS seguindo_este,
+              -- Direção oposta: o dono do perfil segue quem está visitando.
+              -- As colunas trocam de lado em relação ao EXISTS acima; inverter
+              -- aqui não gera erro, apenas devolve a resposta errada.
+              EXISTS(SELECT 1 FROM follow f
+                     WHERE f.follower_id = u.id AND f.following_id = ?) AS te_segue
             FROM user u
-            WHERE ${coluna} = ? AND u.deleted_at IS NULL`, [visitanteId, valor]
+            WHERE ${coluna} = ? AND u.deleted_at IS NULL`,
+            // A ordem acompanha os "?": seguindo_este, te_segue e o WHERE.
+            [visitanteId, visitanteId, valor]
         )
 
         if(!rows[0]) return null;
@@ -76,6 +83,7 @@ class UsuariosRepository {
             seguidores: Number(rows[0].seguidores),
             seguindo: Number(rows[0].seguindo),
             seguindoEste: Boolean(rows[0].seguindo_este),
+            teSegue: Boolean(rows[0].te_segue),
         }
     }
 

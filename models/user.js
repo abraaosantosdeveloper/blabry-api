@@ -91,7 +91,7 @@ class User {
     };
   }
 
-  paraPerfil({proprio=false, seguidores=0, seguindo=0, seguindoEste=null} = {}){
+  paraPerfil({proprio=false, seguidores=0, seguindo=0, seguindoEste=null, teSegue=null} = {}){
     return {
       nome: this.nome,
       alias: this.apelido,
@@ -99,11 +99,15 @@ class User {
       bio: this.bio,
       nacionalidade: this.nacionalidade,
       email: proprio ? this.email : null,
-      nascimento: proprio ? soData(this.nascimento) : null,
+      // Nascimento é público, como em qualquer perfil de rede social.
+      nascimento: soData(this.nascimento),
       seguidores,
       seguindo,
       desde: this.criadoEm ? new Date(this.criadoEm).getFullYear() : null,
       seguindoEste: proprio ? null : seguindoEste,
+      // Se o dono do perfil segue quem está visitando. Null no próprio
+      // perfil, onde a pergunta não faz sentido.
+      teSegue: proprio ? null : teSegue,
     };
   }
 

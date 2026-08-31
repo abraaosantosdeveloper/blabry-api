@@ -44,16 +44,19 @@ describe('User — verificação de senha', () => {
 });
 
 describe('User — paraPerfil', () => {
-  it('esconde email e nascimento no perfil público', () => {
+  /* E-mail é dado de contato: exposto em perfil público, viabilizaria coleta
+     em massa de endereços. Nascimento e nacionalidade são apresentação. */
+  it('esconde apenas o email no perfil público', () => {
     const perfil = criar().paraPerfil({ seguidores: 10, seguindo: 5, seguindoEste: true });
 
     expect(perfil.email).toBeNull();
-    expect(perfil.nascimento).toBeNull();
+    expect(perfil.nascimento).toBe('1990-05-14');
+    expect(perfil.nacionalidade).toBe('BRA');
     expect(perfil.seguidores).toBe(10);
     expect(perfil.seguindoEste).toBe(true);
   });
 
-  it('mostra email e nascimento no próprio perfil, e anula seguindoEste', () => {
+  it('mostra o email no próprio perfil, e anula seguindoEste', () => {
     const perfil = criar().paraPerfil({ proprio: true, seguidores: 10, seguindo: 5 });
 
     expect(perfil.email).toBe('john@exemplo.com');

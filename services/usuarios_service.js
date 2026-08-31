@@ -121,12 +121,12 @@ async function perfilPorAlias(alias, visitanteId) {
 
   if (!resultado) throw erro('Usuário não encontrado', 404);
 
-  const { usuario, seguidores, seguindo, seguindoEste } = resultado;
+  const { usuario, seguidores, seguindo, seguindoEste, teSegue } = resultado;
   
   // Visitar o próprio perfil pela URL pública ainda é o próprio perfil.
   const proprio = usuario.id === visitanteId;
   
-  return usuario.paraPerfil({ proprio, seguidores, seguindo, seguindoEste });
+  return usuario.paraPerfil({ proprio, seguidores, seguindo, seguindoEste, teSegue });
 }
 
 

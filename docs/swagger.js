@@ -110,15 +110,21 @@ const options = {
         Perfil: {
           type: 'object',
           description:
-            'Perfil de usuário. `email` e `nascimento` só são preenchidos em /usuarios/me — ' +
-            'no perfil público vêm como null para não expor dados pessoais.',
+            'Perfil de usuário. `email` só é preenchido em /users/me — no perfil ' +
+            'público vem como null, por ser dado de contato. Os demais campos, ' +
+            'incluindo `nascimento`, são públicos.',
           properties: {
             nome: { type: 'string', example: 'John Doe' },
             alias: { type: 'string', example: 'John.Doe2026' },
             fotoUrl: { type: 'string', nullable: true },
             bio: { type: 'string', nullable: true, maxLength: 280 },
-            email: { type: 'string', format: 'email', nullable: true },
-            nascimento: { type: 'string', format: 'date', nullable: true },
+            email: {
+              type: 'string',
+              format: 'email',
+              nullable: true,
+              description: 'Apenas no próprio perfil; null no perfil público.',
+            },
+            nascimento: { type: 'string', format: 'date', nullable: true, description: 'Público.' },
             nacionalidade: { type: 'string', nullable: true, example: 'BRA' },
             seguindo: { type: 'integer', example: 159 },
             seguidores: { type: 'integer', example: 2500 },
@@ -127,6 +133,13 @@ const options = {
               type: 'boolean',
               nullable: true,
               description: 'Se o usuário do token segue este perfil. Null no próprio perfil.',
+            },
+            teSegue: {
+              type: 'boolean',
+              nullable: true,
+              description:
+                'Se o dono deste perfil segue o usuário do token — a direção oposta ' +
+                'de seguindoEste. Null no próprio perfil.',
             },
           },
         },
