@@ -110,9 +110,9 @@ const options = {
         Perfil: {
           type: 'object',
           description:
-            'Perfil de usuário. `email` só é preenchido em /users/me — no perfil ' +
-            'público vem como null, por ser dado de contato. Os demais campos, ' +
-            'incluindo `nascimento`, são públicos.',
+            'Perfil de usuário. `email`, `nascimento` e `nacionalidade` são dados ' +
+            'pessoais e só vêm preenchidos em /users/me; no perfil público vêm como ' +
+            'null. Os demais campos formam a apresentação e são sempre visíveis.',
           properties: {
             nome: { type: 'string', example: 'John Doe' },
             alias: { type: 'string', example: 'John.Doe2026' },
@@ -124,8 +124,13 @@ const options = {
               nullable: true,
               description: 'Apenas no próprio perfil; null no perfil público.',
             },
-            nascimento: { type: 'string', format: 'date', nullable: true, description: 'Público.' },
-            nacionalidade: { type: 'string', nullable: true, example: 'BRA' },
+            nascimento: { type: 'string', format: 'date', nullable: true, description: 'Apenas no próprio perfil.' },
+            nacionalidade: {
+              type: 'string',
+              nullable: true,
+              example: 'BRA',
+              description: 'Apenas no próprio perfil.',
+            },
             seguindo: { type: 'integer', example: 159 },
             seguidores: { type: 'integer', example: 2500 },
             desde: { type: 'integer', example: 2026 },

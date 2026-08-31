@@ -25,7 +25,7 @@ class User {
   constructor({
     id, nome, apelido, email, senhaHash,
     nacionalidade, nascimento, bio = null,fotoUrl = null,
-    criadoEm = null, excluidoEm = null,
+    criadoEm = null, excluidoEm = null, emailVerificadoEm = null,
   }) {
     this.id = id;
     this.nome = nome;
@@ -36,6 +36,10 @@ class User {
     this.fotoUrl = fotoUrl;
     this.criadoEm = criadoEm;
     this.excluidoEm = excluidoEm;
+    /* Quando o e-mail foi confirmado. NULL significa "ainda não", e o login
+       é recusado nesse estado — daí a propriedade viver no modelo e não em
+       uma consulta avulsa do serviço. */
+    this.emailVerificadoEm = emailVerificadoEm;
     this.bio = bio;
 
     Object.defineProperty(this, 'senhaHash', {
@@ -58,6 +62,7 @@ class User {
       fotoUrl: linha.pic_url,
       criadoEm: linha.created_at,
       excluidoEm: linha.deleted_at,
+      emailVerificadoEm: linha.email_verified_at,
       bio: linha.bio,
     });
   }
@@ -71,6 +76,17 @@ class User {
   async verificarSenha(senha) {
     if (!this.senhaHash) return false;
     return bcrypt.compare(senha, this.senhaHash);
+  }
+
+  /**
+   * A conta já teve o e-mail confirmado?
+   *
+   * É um getter, e não um campo booleano guardado, porque deriva de um dado
+   * que já existe: manter os dois lado a lado abriria espaço para eles
+   * discordarem.
+   */
+  get emailVerificado() {
+    return this.emailVerificadoEm !== null && this.emailVerificadoEm !== undefined;
   }
 
   /** Conta desativada por soft delete. */
@@ -97,10 +113,13 @@ class User {
       alias: this.apelido,
       fotoUrl: this.fotoUrl,
       bio: this.bio,
-      nacionalidade: this.nacionalidade,
+      // Dados pessoais só existem no próprio perfil. Nacionalidade entrou
+      // nesse grupo: combinada a nome e foto, ela contribui para identificar
+      // uma pessoa, e não é informação que o visitante precise para decidir
+      // seguir alguém. O perfil público expõe apenas a apresentação.
       email: proprio ? this.email : null,
-      // Nascimento é público, como em qualquer perfil de rede social.
-      nascimento: soData(this.nascimento),
+      nascimento: proprio ? soData(this.nascimento) : null,
+      nacionalidade: proprio ? this.nacionalidade : null,
       seguidores,
       seguindo,
       desde: this.criadoEm ? new Date(this.criadoEm).getFullYear() : null,
