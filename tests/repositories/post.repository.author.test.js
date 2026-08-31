@@ -52,7 +52,7 @@ describe('PostRepository.listByAuthor', () => {
       viewerId: 'visitante-1',
     });
 
-    expect(pool.chamadas[0].params).toEqual(['visitante-1', 'author-1']);
+    expect(pool.calls[0].params).toEqual(['visitante-1', 'author-1']);
   });
 
   /* Dado: a mesma listagem;
@@ -66,7 +66,7 @@ describe('PostRepository.listByAuthor', () => {
       viewerId: 'visitante-1',
     });
 
-    expect(pool.chamadas[1].params).toEqual(['author-1']);
+    expect(pool.calls[1].params).toEqual(['author-1']);
     // O MySQL devolve COUNT como string; o repositório precisa converter.
     expect(total).toBe(7);
   });
@@ -83,8 +83,8 @@ describe('PostRepository.listByAuthor', () => {
       viewerId: 'visitante-1',
     });
 
-    expect(pool.chamadas[0].sql).toContain('u.deleted_at IS NULL');
-    expect(pool.chamadas[1].sql).toContain('u.deleted_at IS NULL');
+    expect(pool.calls[0].sql).toContain('u.deleted_at IS NULL');
+    expect(pool.calls[1].sql).toContain('u.deleted_at IS NULL');
   });
 
   /* Dado: LIMIT e OFFSET, que o MySQL não aceita como placeholder e por
@@ -107,7 +107,7 @@ describe('PostRepository.listByAuthor', () => {
     ).rejects.toThrow(TypeError);
 
     // Nada chegou a ser executado: a barreira é anterior à consulta.
-    expect(pool.chamadas).toHaveLength(0);
+    expect(pool.calls).toHaveLength(0);
   });
 
   /* Dado: rows cruas do MySQL;
@@ -139,6 +139,6 @@ describe('PostRepository.listByAuthor', () => {
       viewerId: 'visitante-1',
     });
 
-    expect(pool.chamadas[0].sql).toContain('ORDER BY p.created_at DESC, p.id DESC');
+    expect(pool.calls[0].sql).toContain('ORDER BY p.created_at DESC, p.id DESC');
   });
 });

@@ -6,9 +6,9 @@ const USER_ID = '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90';
 
 const mockState = {
   passwordHash: null,
-  emailEmUso: false,
-  paisExiste: true,
-  atualizacoes: [],
+  emailInUse: false,
+  countryExists: true,
+  updates: [],
   row: null,
 };
 
@@ -18,7 +18,7 @@ function baseRow() {
     full_name: 'John Doe',
     alias: 'john.doe',
     email: 'john@exemplo.com',
-    password_hash: mockState.senhaHash,
+    password_hash: mockState.passwordHash,
     nationality: 'BRA',
     birth_date: '1990-05-14',
     bio: null,
@@ -27,7 +27,7 @@ function baseRow() {
     deleted_at: null,
     followers: 0,
     following: 0,
-    seguindo_este: 0,
+    is_following: 0,
   };
 }
 
@@ -36,16 +36,16 @@ jest.mock('../../repositories/users_repository', () => {
 
   return class UsersRepositoryFake {
     async findProfile() {
-      if (!mockState.linha) return null;
+      if (!mockState.row) return null;
       return {
-        user: User.fromRow(mockState.linha),
+        user: User.fromRow(mockState.row),
         followers: 0,
         following: 0,
         isFollowing: false,
       };
     }
-    async update(_id, campos) {
-      mockState.atualizacoes.push(campos);
+    async update(_id, fields) {
+      mockState.updates.push(fields);
       return 1;
     }
     async emailInUse() {
@@ -57,7 +57,7 @@ jest.mock('../../repositories/users_repository', () => {
 jest.mock('../../repositories/countries_repository', () =>
   class CountriesRepositoryFake {
     async listAll() { return []; }
-    async exists() { return mockState.paisExiste; }
+    async exists() { return mockState.countryExists; }
   }
 );
 
@@ -73,14 +73,14 @@ const patch = (corpo) =>
   request(app).patch('/users/me').set('Authorization', `Bearer ${token()}`).send(corpo);
 
 beforeAll(async () => {
-  mockState.senhaHash = await bcrypt.hash('SenhaForte#1', 12);
+  mockState.passwordHash = await bcrypt.hash('SenhaForte#1', 12);
 });
 
 beforeEach(() => {
   mockState.emailInUse = false;
-  mockState.paisExiste = true;
-  mockState.atualizacoes = [];
-  mockState.linha = baseRow();
+  mockState.countryExists = true;
+  mockState.updates = [];
+  mockState.row = baseRow();
 });
 
 /* ---------- Autorização ---------- */
@@ -101,23 +101,23 @@ describe('PATCH /users/me — campos simples', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('alias');
     expect(res.body).toHaveProperty('followers');
-    expect(mockState.atualizacoes[0]).toEqual({ bio: 'Desenvolvedor Node.js.' });
+    expect(mockState.updates[0]).toEqual({ bio: 'Desenvolvedor Node.js.' });
   });
 
   it('normaliza espaços em excesso no name', async () => {
     await patch({ name: '  Abraão   Filipi  ' });
-    expect(mockState.atualizacoes[0].name).toBe('Abraão Filipi');
+    expect(mockState.updates[0].name).toBe('Abraão Filipi');
   });
 
   it('converte bio vazia em null', async () => {
     await patch({ bio: '   ' });
-    expect(mockState.atualizacoes[0].bio).toBeNull();
+    expect(mockState.updates[0].bio).toBeNull();
   });
 
   it('recusa bio acima de 280 caracteres', async () => {
     const res = await patch({ bio: 'a'.repeat(281) });
     expect(res.status).toBe(400);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 
   it('recusa name curto demais', async () => {
@@ -133,7 +133,7 @@ describe('PATCH /users/me — campos simples', () => {
     const res = await patch({ bio: 'válida', name: 'A' });
 
     expect(res.status).toBe(400);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 });
 
@@ -147,20 +147,20 @@ describe('PATCH /users/me — birthDate e nationality', () => {
 
   it('aceita data válida e guarda apenas a parte de calendário', async () => {
     await patch({ birthDate: '2004-01-20T02:00:00.000Z' });
-    expect(mockState.atualizacoes[0].birthDate).toBe('2004-01-20');
+    expect(mockState.updates[0].birthDate).toBe('2004-01-20');
   });
 
   it('normaliza a nationality para maiúsculas', async () => {
     await patch({ nationality: 'prt' });
-    expect(mockState.atualizacoes[0].nationality).toBe('PRT');
+    expect(mockState.updates[0].nationality).toBe('PRT');
   });
 
   it('recusa nationality inexistente na tabela', async () => {
-    mockState.paisExiste = false;
+    mockState.countryExists = false;
     const res = await patch({ nationality: 'XYZ' });
 
     expect(res.status).toBe(400);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 });
 
@@ -171,29 +171,29 @@ describe('PATCH /users/me — troca de e-mail', () => {
     const res = await patch({ email: 'novo@exemplo.com' });
 
     expect(res.status).toBe(401);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 
   it('recusa com 401 quando a password atual está errada', async () => {
-    const res = await patch({ email: 'novo@exemplo.com', senhaAtual: 'ErradaX#9' });
+    const res = await patch({ email: 'novo@exemplo.com', currentPassword: 'ErradaX#9' });
 
     expect(res.status).toBe(401);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 
   it('aceita com a password correta', async () => {
-    const res = await patch({ email: 'novo@exemplo.com', senhaAtual: 'SenhaForte#1' });
+    const res = await patch({ email: 'novo@exemplo.com', currentPassword: 'SenhaForte#1' });
 
     expect(res.status).toBe(200);
-    expect(mockState.atualizacoes[0].email).toBe('novo@exemplo.com');
+    expect(mockState.updates[0].email).toBe('novo@exemplo.com');
   });
 
   it('recusa com 409 quando o e-mail pertence a outra conta', async () => {
     mockState.emailInUse = true;
-    const res = await patch({ email: 'ocupado@exemplo.com', senhaAtual: 'SenhaForte#1' });
+    const res = await patch({ email: 'ocupado@exemplo.com', currentPassword: 'SenhaForte#1' });
 
     expect(res.status).toBe(409);
-    expect(mockState.atualizacoes).toHaveLength(0);
+    expect(mockState.updates).toHaveLength(0);
   });
 
   /* Sem mudança real de e-mail, não faz sentido pedir password */
@@ -201,18 +201,18 @@ describe('PATCH /users/me — troca de e-mail', () => {
     const res = await patch({ email: 'JOHN@exemplo.com' });
 
     expect(res.status).toBe(200);
-    expect(mockState.atualizacoes[0].email).toBe('john@exemplo.com');
+    expect(mockState.updates[0].email).toBe('john@exemplo.com');
   });
 
   it('nunca devolve a password atual na resposta', async () => {
-    const res = await patch({ email: 'novo@exemplo.com', senhaAtual: 'SenhaForte#1' });
+    const res = await patch({ email: 'novo@exemplo.com', currentPassword: 'SenhaForte#1' });
 
     expect(JSON.stringify(res.body)).not.toContain('SenhaForte');
     expect(JSON.stringify(res.body)).not.toContain('$2b$');
   });
 
   it('não repassa senhaAtual como campo do banco', async () => {
-    await patch({ email: 'novo@exemplo.com', senhaAtual: 'SenhaForte#1' });
-    expect(mockState.atualizacoes[0]).not.toHaveProperty('senhaAtual');
+    await patch({ email: 'novo@exemplo.com', currentPassword: 'SenhaForte#1' });
+    expect(mockState.updates[0]).not.toHaveProperty('senhaAtual');
   });
 });

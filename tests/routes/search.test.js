@@ -15,7 +15,7 @@ const mockState = {
 jest.mock('../../repositories/users_repository', () =>
   class UsersRepositoryFake {
     async search(argumentos) {
-      mockState.chamadas.push(argumentos);
+      mockState.calls.push(argumentos);
       return { users: mockState.users, total: mockState.total };
     }
     async findProfile() { return null; }
@@ -47,7 +47,7 @@ const fakeUser = (alias) => ({
 });
 
 beforeEach(() => {
-  mockState.chamadas = [];
+  mockState.calls = [];
   mockState.users = [];
   mockState.total = 0;
 });
@@ -80,7 +80,7 @@ describe('GET /users — termo de busca', () => {
     expect(res.status).toBe(200);
     expect(res.body.users).toEqual([]);
     expect(res.body.total).toBe(0);
-    expect(mockState.chamadas).toHaveLength(0);   // nem consultou o banco
+    expect(mockState.calls).toHaveLength(0);   // nem consultou o banco
   });
 
   it('devolve lista vazia quando o termo é omitido', async () => {
@@ -88,18 +88,18 @@ describe('GET /users — termo de busca', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.users).toEqual([]);
-    expect(mockState.chamadas).toHaveLength(0);
+    expect(mockState.calls).toHaveLength(0);
   });
 
   /* O @ é conveniência de quem digita; o alias gravado não o contém. */
   it('remove o @ antes de consultar', async () => {
     await buscar({ q: '@abraao' });
-    expect(mockState.chamadas[0].q).toBe('abraao');
+    expect(mockState.calls[0].q).toBe('abraao');
   });
 
   it('ignora espaços em volta do termo', async () => {
     await buscar({ q: '  abraao  ' });
-    expect(mockState.chamadas[0].q).toBe('abraao');
+    expect(mockState.calls[0].q).toBe('abraao');
   });
 });
 
@@ -109,7 +109,7 @@ describe('GET /users — paginação', () => {
     await buscar({ q: 'abra', page: '3', limit: '8' });
 
     // Página 3 com 8 por página começa na 17ª row.
-    expect(mockState.chamadas[0]).toMatchObject({ limit: 8, offset: 16 });
+    expect(mockState.calls[0]).toMatchObject({ limit: 8, offset: 16 });
   });
 
   it('calcula o total de páginas arredondando para cima', async () => {
@@ -130,17 +130,17 @@ describe('GET /users — paginação', () => {
 
   it('limita a quantidade por página ao teto do servidor', async () => {
     await buscar({ q: 'abra', limit: '100000' });
-    expect(mockState.chamadas[0].limit).toBe(50);
+    expect(mockState.calls[0].limit).toBe(50);
   });
 
   it('usa os padrões quando os parâmetros não são numéricos', async () => {
     await buscar({ q: 'abra', page: 'abc', limit: 'xyz' });
-    expect(mockState.chamadas[0]).toMatchObject({ limit: 8, offset: 0 });
+    expect(mockState.calls[0]).toMatchObject({ limit: 8, offset: 0 });
   });
 
   it('trata página negativa como a primeira', async () => {
     await buscar({ q: 'abra', page: '-5' });
-    expect(mockState.chamadas[0].offset).toBe(0);
+    expect(mockState.calls[0].offset).toBe(0);
   });
 });
 
@@ -149,11 +149,11 @@ describe('GET /users — identidade', () => {
      alguém de consultar em name de outro usuário. */
   it('usa o usuário do token como visitante', async () => {
     await buscar({ q: 'abra' });
-    expect(mockState.chamadas[0].visitanteId).toBe(USER_ID);
+    expect(mockState.calls[0].visitanteId).toBe(USER_ID);
   });
 
   it('ignora um identificador enviado na query string', async () => {
     await buscar({ q: 'abra', userId: 'outro-uuid', viewerId: 'outro-uuid' });
-    expect(mockState.chamadas[0].visitanteId).toBe(USER_ID);
+    expect(mockState.calls[0].visitanteId).toBe(USER_ID);
   });
 });

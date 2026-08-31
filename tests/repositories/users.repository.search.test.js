@@ -33,7 +33,7 @@ describe('UsersRepository.search — montagem da consulta', () => {
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
     // visitante, alias LIKE prefixo, name LIKE conteúdo, alias exato, alias LIKE prefixo
-    expect(pool.chamadas[0].params).toEqual([
+    expect(pool.calls[0].params).toEqual([
       'uuid-1', 'abra%', '%abra%', 'abra', 'abra%',
     ]);
   });
@@ -44,7 +44,7 @@ describe('UsersRepository.search — montagem da consulta', () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
-    for (const { sql, params } of pool.chamadas) {
+    for (const { sql, params } of pool.calls) {
       expect((sql.match(/\?/g) ?? []).length).toBe(params.length);
     }
   });
@@ -53,16 +53,16 @@ describe('UsersRepository.search — montagem da consulta', () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
-    expect(pool.chamadas[0].sql).toContain('u.id <> ?');
-    expect(pool.chamadas[0].params[0]).toBe('uuid-1');
+    expect(pool.calls[0].sql).toContain('u.id <> ?');
+    expect(pool.calls[0].params[0]).toBe('uuid-1');
   });
 
   it('ignora contas excluídas por soft delete', async () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
-    expect(pool.chamadas[0].sql).toContain('deleted_at IS NULL');
-    expect(pool.chamadas[1].sql).toContain('deleted_at IS NULL');
+    expect(pool.calls[0].sql).toContain('deleted_at IS NULL');
+    expect(pool.calls[1].sql).toContain('deleted_at IS NULL');
   });
 
   /* A contagem precisa das mesmas condições da listagem: se divergirem, a
@@ -71,7 +71,7 @@ describe('UsersRepository.search — montagem da consulta', () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
-    const [busca, contagem] = pool.chamadas;
+    const [busca, contagem] = pool.calls;
     for (const condicao of ['deleted_at IS NULL', 'u.id <> ?', 'u.alias LIKE ?', 'u.full_name LIKE ?']) {
       expect(busca.sql).toContain(condicao);
       expect(contagem.sql).toContain(condicao);
@@ -82,7 +82,7 @@ describe('UsersRepository.search — montagem da consulta', () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'santos', viewerId: 'uuid-1' });
 
-    const [, prefixoAlias, conteudoNome] = pool.chamadas[0].params;
+    const [, prefixoAlias, conteudoNome] = pool.calls[0].params;
     expect(prefixoAlias).toBe('santos%');   // índice funciona: curinga só no fim
     expect(conteudoNome).toBe('%santos%');  // acha "Santos" em "Abraão Santos"
   });
@@ -91,8 +91,8 @@ describe('UsersRepository.search — montagem da consulta', () => {
     const pool = fakePool([LINHA], 1);
     await new UsersRepository(pool).search({ q: 'abra', viewerId: 'uuid-1' });
 
-    expect(pool.chamadas[0].sql).toMatch(/ORDER BY CASE/);
-    expect(pool.chamadas[0].sql).toContain('WHEN u.alias = ? THEN 0');
+    expect(pool.calls[0].sql).toMatch(/ORDER BY CASE/);
+    expect(pool.calls[0].sql).toContain('WHEN u.alias = ? THEN 0');
   });
 
   it('aplica limit e deslocamento recebidos', async () => {
@@ -101,7 +101,7 @@ describe('UsersRepository.search — montagem da consulta', () => {
       q: 'abra', viewerId: 'uuid-1', limit: 8, offset: 16,
     });
 
-    expect(pool.chamadas[0].sql).toContain('LIMIT 8 OFFSET 16');
+    expect(pool.calls[0].sql).toContain('LIMIT 8 OFFSET 16');
   });
 
   /* LIMIT e OFFSET são interpolados na string porque o MySQL não os aceita

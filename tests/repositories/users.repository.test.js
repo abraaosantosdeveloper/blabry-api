@@ -26,7 +26,7 @@ const LINHA = {
   deleted_at: null,
   followers: '12',
   following: '7',
-  seguindo_este: 1,
+  is_following: 1,
 };
 
 describe('UsersRepository.findProfile', () => {
@@ -39,10 +39,10 @@ describe('UsersRepository.findProfile', () => {
     const pool = fakePool([LINHA]);
     await new UsersRepository(pool).findProfile('alias', 'john.doe', 'uuid-visitante');
 
-    // São três "?": seguindo_este, te_segue e o valor do WHERE. O visitante
+    // São três "?": is_following, follows_you e o valor do WHERE. O visitante
     // aparece duas vezes porque as duas verificações de relacionamento
     // partem dele, em direções opostas.
-    expect(pool.chamadas[0].params).toEqual([
+    expect(pool.calls[0].params).toEqual([
       'uuid-visitante', 'uuid-visitante', 'john.doe',
     ]);
   });
@@ -54,7 +54,7 @@ describe('UsersRepository.findProfile', () => {
     const pool = fakePool([LINHA]);
     await new UsersRepository(pool).findProfile('alias', 'john.doe', 'uuid-visitante');
 
-    const sql = pool.chamadas[0].sql.replace(/\s+/g, ' ');
+    const sql = pool.calls[0].sql.replace(/\s+/g, ' ');
 
     // o visitante segue o dono do perfil
     expect(sql).toMatch(/f\.follower_id = \? AND f\.following_id = u\.id\) AS seguindo_este/);
@@ -63,7 +63,7 @@ describe('UsersRepository.findProfile', () => {
   });
 
   it('converte as duas direções em booleano', async () => {
-    const repo = new UsersRepository(fakePool([{ ...LINHA, seguindo_este: 1, te_segue: 0 }]));
+    const repo = new UsersRepository(fakePool([{ ...LINHA, is_following: 1, follows_you: 0 }]));
     const { isFollowing, followsYou } = await repo.findProfile('id', 'uuid-1', 'uuid-visitante');
 
     expect(isFollowing).toBe(true);   // e não 1
@@ -75,24 +75,24 @@ describe('UsersRepository.findProfile', () => {
     const repo = new UsersRepository(pool);
 
     await repo.findProfile('alias', 'john.doe');
-    expect(pool.chamadas[0].sql).toContain('u.alias =');
+    expect(pool.calls[0].sql).toContain('u.alias =');
 
     await repo.findProfile('id', 'uuid-1');
-    expect(pool.chamadas[1].sql).toContain('u.id =');
+    expect(pool.calls[1].sql).toContain('u.id =');
   });
 
   it('ignora usuários excluídos por soft delete', async () => {
     const pool = fakePool([LINHA]);
     await new UsersRepository(pool).findProfile('id', 'uuid-1');
 
-    expect(pool.chamadas[0].sql).toContain('deleted_at IS NULL');
+    expect(pool.calls[0].sql).toContain('deleted_at IS NULL');
   });
 
   it('conta followers por following_id e following por follower_id', async () => {
     const pool = fakePool([LINHA]);
     await new UsersRepository(pool).findProfile('id', 'uuid-1');
 
-    const sql = pool.chamadas[0].sql.replace(/\s+/g, ' ');
+    const sql = pool.calls[0].sql.replace(/\s+/g, ' ');
     expect(sql).toMatch(/f\.following_id = u\.id\) AS followers/);
     expect(sql).toMatch(/f\.follower_id\s+= u\.id\) AS following/);
   });

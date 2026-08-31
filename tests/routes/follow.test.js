@@ -15,13 +15,13 @@ const mockState = {
 jest.mock('../../repositories/users_repository', () =>
   class UsersRepositoryFake {
     async findIdByAlias(alias) {
-      return mockState.idPorAlias[alias] ?? null;
+      return mockState.idByAlias[alias] ?? null;
     }
     async follow(id, seguidorId, seguidoId) {
-      mockState.chamadas.push({ acao: 'seguir', id, seguidorId, seguidoId });
+      mockState.calls.push({ acao: 'seguir', id, seguidorId, seguidoId });
     }
     async unfollow(seguidorId, seguidoId) {
-      mockState.chamadas.push({ acao: 'deixarDeSeguir', seguidorId, seguidoId });
+      mockState.calls.push({ acao: 'deixarDeSeguir', seguidorId, seguidoId });
     }
     async countFollowers() {
       return mockState.followers;
@@ -54,7 +54,7 @@ const deixarDeSeguir = (alias) =>
   request(app).delete(`/users/${alias}/follow`).set('Authorization', `Bearer ${token()}`);
 
 beforeEach(() => {
-  mockState.chamadas = [];
+  mockState.calls = [];
   mockState.followers = 7;
 });
 
@@ -75,7 +75,7 @@ describe('POST /users/:alias/follow', () => {
   it('usa o usuário do token como seguidor', async () => {
     await seguir('outrousuario');
 
-    expect(mockState.chamadas[0]).toMatchObject({
+    expect(mockState.calls[0]).toMatchObject({
       acao: 'seguir',
       seguidorId: USER_ID,
       seguidoId: OUTRO_ID,
@@ -86,14 +86,14 @@ describe('POST /users/:alias/follow', () => {
     const res = await seguir('%40outrousuario');   // "@outrousuario" codificado
 
     expect(res.status).toBe(200);
-    expect(mockState.chamadas[0].seguidoId).toBe(OUTRO_ID);
+    expect(mockState.calls[0].seguidoId).toBe(OUTRO_ID);
   });
 
   it('responde 404 para alias inexistente', async () => {
     const res = await seguir('ninguem');
 
     expect(res.status).toBe(404);
-    expect(mockState.chamadas).toHaveLength(0);
+    expect(mockState.calls).toHaveLength(0);
   });
 
   /* A restrição UNIQUE não pega este scenario: o par seria válido no banco. */
@@ -101,14 +101,14 @@ describe('POST /users/:alias/follow', () => {
     const res = await seguir('eu');
 
     expect(res.status).toBe(400);
-    expect(mockState.chamadas).toHaveLength(0);
+    expect(mockState.calls).toHaveLength(0);
   });
 
   it('gera um identificador para a row de relacionamento', async () => {
     await seguir('outrousuario');
 
-    expect(mockState.chamadas[0].id).toEqual(expect.any(String));
-    expect(mockState.chamadas[0].id.length).toBe(36);   // UUID
+    expect(mockState.calls[0].id).toEqual(expect.any(String));
+    expect(mockState.calls[0].id.length).toBe(36);   // UUID
   });
 });
 
@@ -124,7 +124,7 @@ describe('DELETE /users/:alias/follow', () => {
   it('chama o repositório com seguidor e seguido na ordem correta', async () => {
     await deixarDeSeguir('outrousuario');
 
-    expect(mockState.chamadas[0]).toMatchObject({
+    expect(mockState.calls[0]).toMatchObject({
       acao: 'deixarDeSeguir',
       seguidorId: USER_ID,
       seguidoId: OUTRO_ID,

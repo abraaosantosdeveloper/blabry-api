@@ -25,7 +25,7 @@ describe('User — proteção do hash de password', () => {
   });
 
   it('mantém o hash acessível para quem pedir explicitamente', () => {
-    expect(criar().senhaHash).toBe('$2b$12$hashfalso');
+    expect(criar().passwordHash).toBe('$2b$12$hashfalso');
   });
 });
 
@@ -60,7 +60,7 @@ describe('User — paraPerfil', () => {
     expect(perfil.alias).toBe('john.doe');
     expect(perfil.bio).toBe('Uma bio qualquer.');
     expect(perfil.followers).toBe(10);
-    expect(perfil.seguindoEste).toBe(true);
+    expect(perfil.isFollowing).toBe(true);
   });
 
   it('mostra os dados pessoais no próprio perfil, e anula isFollowing', () => {
@@ -69,11 +69,11 @@ describe('User — paraPerfil', () => {
     expect(perfil.email).toBe('john@exemplo.com');
     expect(perfil.birthDate).toBe('1990-05-14');
     expect(perfil.nationality).toBe('BRA');
-    expect(perfil.seguindoEste).toBeNull();
+    expect(perfil.isFollowing).toBeNull();
   });
 
   it('deriva o ano de entrada a partir da data de criação', () => {
-    expect(criar().toProfile({}).desde).toBe(2026);
+    expect(criar().toProfile({}).memberSince).toBe(2026);
   });
 
   it('funciona sem argumento nenhum', () => {

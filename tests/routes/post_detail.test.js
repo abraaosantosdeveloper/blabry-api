@@ -24,11 +24,11 @@ const mockState = {
 jest.mock('../../repositories/post_repository', () =>
   class PostRepositoryFake {
     async findById(id, viewerId) {
-      mockState.chamadasBuscarPorId.push({ id, viewerId });
+      mockState.findByIdCalls.push({ id, viewerId });
       return mockState.post;
     }
     async listByAuthor(argumentos) {
-      mockState.chamadasListarDoAutor.push(argumentos);
+      mockState.listByAuthorCalls.push(argumentos);
       return { posts: mockState.posts, total: mockState.total };
     }
   }
@@ -36,7 +36,7 @@ jest.mock('../../repositories/post_repository', () =>
 
 jest.mock('../../repositories/users_repository', () =>
   class UsersRepositoryFake {
-    async findIdByAlias() { return mockState.idPorAlias; }
+    async findIdByAlias() { return mockState.idByAlias; }
   }
 );
 
@@ -66,12 +66,12 @@ const fakePost = (id = POST_ID) => ({
 });
 
 beforeEach(() => {
-  mockState.chamadasBuscarPorId = [];
-  mockState.chamadasListarDoAutor = [];
+  mockState.findByIdCalls = [];
+  mockState.listByAuthorCalls = [];
   mockState.post = null;
   mockState.posts = [];
   mockState.total = 0;
-  mockState.idPorAlias = null;
+  mockState.idByAlias = null;
 });
 
 /* ---------------- GET /posts/:id ---------------- */
@@ -108,7 +108,7 @@ describe('GET /posts/:id', () => {
       .get(`/posts/${POST_ID}`)
       .set('Authorization', `Bearer ${token()}`);
 
-    expect(mockState.chamadasBuscarPorId).toEqual([
+    expect(mockState.findByIdCalls).toEqual([
       { id: POST_ID, viewerId: VISITANTE_ID },
     ]);
   });
@@ -134,7 +134,7 @@ describe('GET /posts/:id', () => {
     const res = await request(app).get(`/posts/${POST_ID}`);
 
     expect(res.status).toBe(401);
-    expect(mockState.chamadasBuscarPorId).toHaveLength(0);
+    expect(mockState.findByIdCalls).toHaveLength(0);
   });
 });
 
@@ -145,7 +145,7 @@ describe('GET /users/:alias/posts', () => {
      Quando: a seção de publicações do perfil é carregada;
      Então: a API responde 200 com a lista e os dados de paginação. */
   it('devolve as publicações do author com paginação', async () => {
-    mockState.idPorAlias = AUTHOR_ID;
+    mockState.idByAlias = AUTHOR_ID;
     mockState.posts = [fakePost('a'), fakePost('b')];
     mockState.total = 2;
 
@@ -162,14 +162,14 @@ describe('GET /users/:alias/posts', () => {
      Quando: o service converte página em deslocamento;
      Então: o repositório recebe offset 5 — (2 - 1) × 5. */
   it('converte página em offset antes de chamar o repositório', async () => {
-    mockState.idPorAlias = AUTHOR_ID;
+    mockState.idByAlias = AUTHOR_ID;
 
     await request(app)
       .get('/users/author/posts')
       .query({ page: 2, limit: 5 })
       .set('Authorization', `Bearer ${token()}`);
 
-    expect(mockState.chamadasListarDoAutor[0]).toMatchObject({
+    expect(mockState.listByAuthorCalls[0]).toMatchObject({
       autorId: AUTHOR_ID,
       viewerId: VISITANTE_ID,
       limit: 5,
@@ -182,7 +182,7 @@ describe('GET /users/:alias/posts', () => {
      Então: a arroba é removida antes da consulta — ela nunca faz parte do
      valor armazenado. */
   it('aceita o @ com arroba na frente', async () => {
-    mockState.idPorAlias = AUTHOR_ID;
+    mockState.idByAlias = AUTHOR_ID;
 
     const res = await request(app)
       .get('/users/@author/posts')
@@ -196,14 +196,14 @@ describe('GET /users/:alias/posts', () => {
      Então: 404 — e não uma lista vazia, que afirmaria algo diferente
      ("o usuário existe, mas não publicou nada"). */
   it('responde 404 quando o usuário não existe', async () => {
-    mockState.idPorAlias = null;
+    mockState.idByAlias = null;
 
     const res = await request(app)
       .get('/users/fantasma/posts')
       .set('Authorization', `Bearer ${token()}`);
 
     expect(res.status).toBe(404);
-    expect(mockState.chamadasListarDoAutor).toHaveLength(0);
+    expect(mockState.listByAuthorCalls).toHaveLength(0);
   });
 
   /* Dado: um author sem nenhuma publicação;
@@ -211,7 +211,7 @@ describe('GET /users/:alias/posts', () => {
      Então: lista vazia, mas totalPages 1 — "página 1 de 0" não faz
      sentido para quem lê a interface. */
   it('devolve lista vazia com totalPages 1', async () => {
-    mockState.idPorAlias = AUTHOR_ID;
+    mockState.idByAlias = AUTHOR_ID;
     mockState.posts = [];
     mockState.total = 0;
 
@@ -226,14 +226,14 @@ describe('GET /users/:alias/posts', () => {
      Quando: o valor é normalizado;
      Então: ele é puxado para o teto de 50 — a URL não derruba a instância. */
   it('limita o tamanho da página ao teto', async () => {
-    mockState.idPorAlias = AUTHOR_ID;
+    mockState.idByAlias = AUTHOR_ID;
 
     await request(app)
       .get('/users/author/posts')
       .query({ limit: 100000 })
       .set('Authorization', `Bearer ${token()}`);
 
-    expect(mockState.chamadasListarDoAutor[0].limit).toBe(50);
+    expect(mockState.listByAuthorCalls[0].limit).toBe(50);
   });
 
   /* Dado: uma requisição sem token;

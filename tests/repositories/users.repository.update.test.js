@@ -1,12 +1,12 @@
 const UsersRepository = require('../../repositories/users_repository');
 
-function fakePool(resultado = { affectedRows: 1 }) {
+function fakePool(result = { affectedRows: 1 }) {
   const calls = [];
   return {
     calls,
     async execute(sql, params) {
       calls.push({ sql, params });
-      return [resultado];
+      return [result];
     },
   };
 }
@@ -19,7 +19,7 @@ describe('UsersRepository.update — lista branca de colunas', () => {
       bio: 'Uma bio.',
     });
 
-    const { sql, params } = pool.chamadas[0];
+    const { sql, params } = pool.calls[0];
     expect(sql).toContain('full_name = ?');
     expect(sql).toContain('bio = ?');
     expect(params).toEqual(['Novo Nome', 'Uma bio.', 'uuid-1']);
@@ -35,7 +35,7 @@ describe('UsersRepository.update — lista branca de colunas', () => {
       deleted_at: '2020-01-01',
     });
 
-    const { sql, params } = pool.chamadas[0];
+    const { sql, params } = pool.calls[0];
     expect(sql).not.toContain('password_hash');
     expect(sql).not.toContain('deleted_at = ');
     expect(sql).not.toContain('id = ?,');
@@ -50,7 +50,7 @@ describe('UsersRepository.update — lista branca de colunas', () => {
       toString: 'y',
     });
 
-    expect(pool.chamadas[0].params).toEqual(['Legítimo', 'uuid-1']);
+    expect(pool.calls[0].params).toEqual(['Legítimo', 'uuid-1']);
   });
 
   it('não executa consulta quando nenhum campo é válido', async () => {
@@ -58,14 +58,14 @@ describe('UsersRepository.update — lista branca de colunas', () => {
     const rows = await new UsersRepository(pool).update('uuid-1', { hackeado: true });
 
     expect(rows).toBe(0);
-    expect(pool.chamadas).toHaveLength(0);
+    expect(pool.calls).toHaveLength(0);
   });
 
   it('restringe a atualização ao próprio usuário e ignora contas excluídas', async () => {
     const pool = fakePool();
     await new UsersRepository(pool).update('uuid-1', { bio: 'x' });
 
-    const sql = pool.chamadas[0].sql.replace(/\s+/g, ' ');
+    const sql = pool.calls[0].sql.replace(/\s+/g, ' ');
     expect(sql).toContain('WHERE id = ?');
     expect(sql).toContain('deleted_at IS NULL');
   });
@@ -76,7 +76,7 @@ describe('UsersRepository.emailInUse', () => {
     const pool = fakePool([]);
     await new UsersRepository(pool).emailInUse('a@b.c', 'uuid-1');
 
-    expect(pool.chamadas[0].sql).toContain('id <> ?');
-    expect(pool.chamadas[0].params).toEqual(['a@b.c', 'uuid-1']);
+    expect(pool.calls[0].sql).toContain('id <> ?');
+    expect(pool.calls[0].params).toEqual(['a@b.c', 'uuid-1']);
   });
 });

@@ -88,7 +88,7 @@ describe('POST /auth/signup', () => {
 
     expect(res.status).toBe(201);
     expect(res.body).not.toHaveProperty('token');
-    expect(res.body.verificacaoPendente).toBe(true);
+    expect(res.body.verificationPending).toBe(true);
     expect(res.body.user).toMatchObject({
       name: 'John Doe',
       alias: 'john.doe',
@@ -117,7 +117,7 @@ describe('POST /auth/signup', () => {
     it.each(rejected)('recusa quando o aceite vem %s', async (_rotulo, override) => {
       const payload = { ...NOVA_CONTA, ...sobrescrita };
       // 'ausente' é o único scenario em que o campo precisa sumir do objeto.
-      if (!('acceptedPolicy' in override)) delete payload.aceitouPolitica;
+      if (!('acceptedPolicy' in override)) delete payload.acceptedPolicy;
 
       const res = await request(app).post('/auth/signup').send(payload);
 

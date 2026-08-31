@@ -7,7 +7,7 @@ const mockCloudinary = { calls: [], falhar: false };
 jest.mock('../../config/cloudinary', () => ({
   uploader: {
     upload_stream(opcoes, callback) {
-      mockCloudinary.chamadas.push(opcoes);
+      mockCloudinary.calls.push(opcoes);
       return {
         end(buffer) {
           if (mockCloudinary.falhar) return callback(new Error('falha simulada'));
@@ -52,7 +52,7 @@ const token = () => jwt.sign({ id: USER_ID, name: 'Teste' }, process.env.JWT_SEC
 const fakeJpeg = (bytes = 1024) => Buffer.alloc(bytes, 0xff);
 
 beforeEach(() => {
-  mockCloudinary.chamadas = [];
+  mockCloudinary.calls = [];
   mockCloudinary.falhar = false;
   mockDb.linhasAfetadas = 1;
   mockDb.url = null;
@@ -86,7 +86,7 @@ describe('POST /users/photo', () => {
       .attach('photo', Buffer.from('%PDF-1.4'), { filename: 'doc.pdf', contentType: 'application/pdf' });
 
     expect(res.status).toBe(415);
-    expect(mockCloudinary.chamadas).toHaveLength(0);
+    expect(mockCloudinary.calls).toHaveLength(0);
   });
 
   it('recusa arquivo acima de 5 MB com 413 e não chama o Cloudinary', async () => {
@@ -96,7 +96,7 @@ describe('POST /users/photo', () => {
       .attach('photo', fakeJpeg(6 * 1024 * 1024), { filename: 'grande.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(413);
-    expect(mockCloudinary.chamadas).toHaveLength(0);
+    expect(mockCloudinary.calls).toHaveLength(0);
   });
 
   it('recusa campo de arquivo com name errado', async () => {
@@ -145,7 +145,7 @@ describe('POST /users/photo', () => {
       .set('Authorization', `Bearer ${token()}`)
       .attach('photo', fakeJpeg(), { filename: 'p.jpg', contentType: 'image/jpeg' });
 
-    expect(mockCloudinary.chamadas[0]).toMatchObject({
+    expect(mockCloudinary.calls[0]).toMatchObject({
       public_id: USER_ID,
       overwrite: true,
     });
