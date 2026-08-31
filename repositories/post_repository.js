@@ -23,6 +23,39 @@ class PostRepository {
                     WHERE lp.post_id = p.id AND lp.user_id = ?) AS curtido`;
   }
 
+
+  /**
+   * Converte o texto digitado na expressão que o modo booleano do MySQL
+   * entende.
+   *
+   * Por que não usar o modo NATURAL LANGUAGE:
+   *   - ele casa apenas palavras inteiras, então "gran" não acha "grande",
+   *     que é justamente o que se espera de uma caixa de busca;
+   *   - a frase inteira vai como está, e tokens muito curtos atrapalham.
+   *
+   * O que este método faz, por token:
+   *   - remove os operadores do modo booleano (+ - > < ( ) ~ * " @), que o
+   *     usuário pode ter digitado sem intenção e que causariam erro de
+   *     sintaxe na consulta;
+   *   - descarta tokens menores que o tamanho mínimo indexado pelo InnoDB
+   *     (innodb_ft_min_token_size, padrão 3) — eles nunca casariam;
+   *   - acrescenta "*" para casar por prefixo.
+   *
+   * Os tokens são unidos por espaço, o que no modo booleano significa "ou":
+   * quem tiver mais deles aparece antes, pela relevância.
+   *
+   * @param {string} termo texto digitado pelo usuário
+   * @returns {string} expressão booleana, ou string vazia se nada sobrar
+   */
+  static expressaoBooleana(termo) {
+    return String(termo ?? '')
+      .split(/\s+/)
+      .map((token) => token.replace(/[+\-><()~*"@]/g, ''))
+      .filter((token) => token.length >= 3)
+      .map((token) => `${token}*`)
+      .join(' ');
+  }
+
   /**
    * Feed e busca no mesmo método — a diferença é um WHERE e a ordenação.
    *
@@ -36,14 +69,21 @@ class PostRepository {
     if (!Number.isInteger(limite) || !Number.isInteger(offset))
       throw new TypeError('limite e offset devem ser inteiros');
 
-    const busca = Boolean(q);
+    // Traduz o texto digitado para a sintaxe do modo booleano. Se nada
+    // sobrar — só palavras curtas demais —, a busca devolve vazio em vez de
+    // consultar sem filtro, que retornaria o feed inteiro.
+    const expressao = q ? PostRepository.expressaoBooleana(q) : '';
+
+    if (q && !expressao) return { posts: [], total: 0 };
+
+    const busca = Boolean(expressao);
 
     const relevancia = busca
-      ? ', MATCH (p.content) AGAINST (? IN NATURAL LANGUAGE MODE) AS relevancia'
+      ? ', MATCH (p.content) AGAINST (? IN BOOLEAN MODE) AS relevancia'
       : '';
 
     const filtro = busca
-      ? 'AND MATCH (p.content) AGAINST (? IN NATURAL LANGUAGE MODE)'
+      ? 'AND MATCH (p.content) AGAINST (? IN BOOLEAN MODE)'
       : '';
 
     const ordem = busca
@@ -52,7 +92,7 @@ class PostRepository {
 
     // A ordem dos parâmetros segue a ordem dos "?" no SQL montado.
     const parametros = busca
-      ? [q, visitanteId, q]
+      ? [expressao, visitanteId, expressao]
       : [visitanteId];
 
     const [rows] = await this.pool.execute(
@@ -71,7 +111,7 @@ class PostRepository {
          FROM post p
          JOIN user u ON u.id = p.user_id
         WHERE u.deleted_at IS NULL ${filtro}`,
-      busca ? [q] : []
+      busca ? [expressao] : []
     );
 
     return { posts: rows.map(Post.deLinha), total: Number(total) };
