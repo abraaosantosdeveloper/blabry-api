@@ -57,9 +57,9 @@ describe('UsersRepository.findProfile', () => {
     const sql = pool.calls[0].sql.replace(/\s+/g, ' ');
 
     // o visitante segue o dono do perfil
-    expect(sql).toMatch(/f\.follower_id = \? AND f\.following_id = u\.id\) AS seguindo_este/);
+    expect(sql).toMatch(/f\.follower_id = \? AND f\.following_id = u\.id\) AS is_following/);
     // o dono do perfil segue o visitante
-    expect(sql).toMatch(/f\.follower_id = u\.id AND f\.following_id = \?\) AS te_segue/);
+    expect(sql).toMatch(/f\.follower_id = u\.id AND f\.following_id = \?\) AS follows_you/);
   });
 
   it('converte as duas direções em booleano', async () => {

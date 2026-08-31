@@ -17,11 +17,11 @@ jest.mock('../../repositories/users_repository', () =>
     async findIdByAlias(alias) {
       return mockState.idByAlias[alias] ?? null;
     }
-    async follow(id, seguidorId, seguidoId) {
-      mockState.calls.push({ acao: 'seguir', id, seguidorId, seguidoId });
+    async follow(id, followerId, followingId) {
+      mockState.calls.push({ acao: 'seguir', id, followerId, followingId });
     }
-    async unfollow(seguidorId, seguidoId) {
-      mockState.calls.push({ acao: 'deixarDeSeguir', seguidorId, seguidoId });
+    async unfollow(followerId, followingId) {
+      mockState.calls.push({ acao: 'deixarDeSeguir', followerId, followingId });
     }
     async countFollowers() {
       return mockState.followers;
@@ -77,8 +77,8 @@ describe('POST /users/:alias/follow', () => {
 
     expect(mockState.calls[0]).toMatchObject({
       acao: 'seguir',
-      seguidorId: USER_ID,
-      seguidoId: OUTRO_ID,
+      followerId: USER_ID,
+      followingId: OUTRO_ID,
     });
   });
 
@@ -86,7 +86,7 @@ describe('POST /users/:alias/follow', () => {
     const res = await seguir('%40outrousuario');   // "@outrousuario" codificado
 
     expect(res.status).toBe(200);
-    expect(mockState.calls[0].seguidoId).toBe(OUTRO_ID);
+    expect(mockState.calls[0].followingId).toBe(OUTRO_ID);
   });
 
   it('responde 404 para alias inexistente', async () => {
@@ -126,8 +126,8 @@ describe('DELETE /users/:alias/follow', () => {
 
     expect(mockState.calls[0]).toMatchObject({
       acao: 'deixarDeSeguir',
-      seguidorId: USER_ID,
-      seguidoId: OUTRO_ID,
+      followerId: USER_ID,
+      followingId: OUTRO_ID,
     });
   });
 

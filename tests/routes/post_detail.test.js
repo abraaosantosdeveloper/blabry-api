@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 
 /* Identidades fixas: o teste precisa distinguir "quem consulta" de "quem
    escreveu", porque o campo `liked` da resposta é relativo ao visitante. */
-const VISITANTE_ID = '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90';
+const VIEWER_ID = '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90';
 const AUTHOR_ID = '01927d4e-1111-7c21-9b44-2f8a1c6d5e91';
 const POST_ID = '01927d4e-2222-7c21-9b44-2f8a1c6d5e92';
 
@@ -51,7 +51,7 @@ jest.mock('../../repositories/comment_repository', () => class CommentRepository
 const app = require('../../server');
 
 const token = () =>
-  jwt.sign({ id: VISITANTE_ID, name: 'Visitante' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  jwt.sign({ id: VIEWER_ID, name: 'Visitante' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 /** Publicação no formato que o repositório devolveria. */
 const fakePost = (id = POST_ID) => ({
@@ -109,7 +109,7 @@ describe('GET /posts/:id', () => {
       .set('Authorization', `Bearer ${token()}`);
 
     expect(mockState.findByIdCalls).toEqual([
-      { id: POST_ID, viewerId: VISITANTE_ID },
+      { id: POST_ID, viewerId: VIEWER_ID },
     ]);
   });
 
@@ -170,8 +170,8 @@ describe('GET /users/:alias/posts', () => {
       .set('Authorization', `Bearer ${token()}`);
 
     expect(mockState.listByAuthorCalls[0]).toMatchObject({
-      autorId: AUTHOR_ID,
-      viewerId: VISITANTE_ID,
+      authorId: AUTHOR_ID,
+      viewerId: VIEWER_ID,
       limit: 5,
       offset: 5,
     });

@@ -21,13 +21,13 @@ jest.mock('../../config/cloudinary', () => ({
   },
 }));
 
-const mockDb = { linhasAfetadas: 1, url: null };
+const mockDb = { affectedRows: 1, url: null };
 
 jest.mock('../../repositories/users_repository', () =>
   class UsersRepositoryFake {
     async updatePhoto(_id, url) {
       mockDb.url = url;
-      return mockDb.linhasAfetadas;
+      return mockDb.affectedRows;
     }
     async findProfile() { return null; }
   }
@@ -54,7 +54,7 @@ const fakeJpeg = (bytes = 1024) => Buffer.alloc(bytes, 0xff);
 beforeEach(() => {
   mockCloudinary.calls = [];
   mockCloudinary.falhar = false;
-  mockDb.linhasAfetadas = 1;
+  mockDb.affectedRows = 1;
   mockDb.url = null;
 });
 
@@ -129,7 +129,7 @@ describe('POST /users/photo', () => {
   });
 
   it('responde 404 quando o usuário do token não existe mais', async () => {
-    mockDb.linhasAfetadas = 0;
+    mockDb.affectedRows = 0;
 
     const res = await request(app)
       .post('/users/photo')

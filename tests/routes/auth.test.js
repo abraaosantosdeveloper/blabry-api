@@ -115,7 +115,7 @@ describe('POST /auth/signup', () => {
     ];
 
     it.each(rejected)('recusa quando o aceite vem %s', async (_rotulo, override) => {
-      const payload = { ...NOVA_CONTA, ...sobrescrita };
+      const payload = { ...NEW_ACCOUNT, ...override };
       // 'ausente' é o único scenario em que o campo precisa sumir do objeto.
       if (!('acceptedPolicy' in override)) delete payload.acceptedPolicy;
 
@@ -148,7 +148,7 @@ describe('POST /auth/signup', () => {
   });
 
   it('recusa com 400 quando falta campo obrigatório', async () => {
-    const { password, ...semSenha } = NEW_ACCOUNT;
+    const { password, ...withoutPassword } = NEW_ACCOUNT;
     const res = await request(app).post('/auth/signup').send(withoutPassword);
 
     expect(res.status).toBe(400);
@@ -159,7 +159,7 @@ describe('POST /auth/signup', () => {
     await request(app).post('/auth/signup').send(NEW_ACCOUNT);
     const res = await request(app)
       .post('/auth/signup')
-      .send({ ...NOVA_CONTA, alias: 'outro.alias' });
+      .send({ ...NEW_ACCOUNT, alias: 'outro.alias' });
 
     expect(res.status).toBe(409);
   });
@@ -168,7 +168,7 @@ describe('POST /auth/signup', () => {
     await request(app).post('/auth/signup').send(NEW_ACCOUNT);
     const res = await request(app)
       .post('/auth/signup')
-      .send({ ...NOVA_CONTA, email: 'outro@exemplo.com' });
+      .send({ ...NEW_ACCOUNT, email: 'outro@exemplo.com' });
 
     expect(res.status).toBe(409);
   });
@@ -251,11 +251,11 @@ describe('POST /auth/login', () => {
       .post('/auth/login')
       .send({ email: 'ninguem@exemplo.com', password: 'SenhaForte#1' });
 
-    const senhaErrada = await request(app)
+    const wrongPassword = await request(app)
       .post('/auth/login')
       .send({ email: NEW_ACCOUNT.email, password: 'SenhaErrada#9' });
 
-    expect(inexistente.status).toBe(senhaErrada.status);
-    expect(inexistente.body.error).toBe(senhaErrada.body.error);
+    expect(inexistente.status).toBe(wrongPassword.status);
+    expect(inexistente.body.error).toBe(wrongPassword.body.error);
   });
 });

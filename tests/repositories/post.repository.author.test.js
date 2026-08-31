@@ -48,7 +48,7 @@ describe('PostRepository.listByAuthor', () => {
     const pool = fakePool([LINHA], 1);
 
     await new PostRepository(pool).listByAuthor({
-      autorId: 'author-1',
+      authorId: 'author-1',
       viewerId: 'visitante-1',
     });
 
@@ -62,7 +62,7 @@ describe('PostRepository.listByAuthor', () => {
     const pool = fakePool([LINHA], 7);
 
     const { total } = await new PostRepository(pool).listByAuthor({
-      autorId: 'author-1',
+      authorId: 'author-1',
       viewerId: 'visitante-1',
     });
 
@@ -79,7 +79,7 @@ describe('PostRepository.listByAuthor', () => {
     const pool = fakePool([], 0);
 
     await new PostRepository(pool).listByAuthor({
-      autorId: 'author-1',
+      authorId: 'author-1',
       viewerId: 'visitante-1',
     });
 
@@ -100,9 +100,9 @@ describe('PostRepository.listByAuthor', () => {
 
     await expect(
       new PostRepository(pool).listByAuthor({
-        autorId: 'author-1',
+        authorId: 'author-1',
         viewerId: 'visitante-1',
-        ...faixa,
+        ...range,
       })
     ).rejects.toThrow(TypeError);
 
@@ -118,7 +118,7 @@ describe('PostRepository.listByAuthor', () => {
     const pool = fakePool([LINHA], 1);
 
     const { posts } = await new PostRepository(pool).listByAuthor({
-      autorId: 'author-1',
+      authorId: 'author-1',
       viewerId: 'visitante-1',
     });
 
@@ -135,7 +135,7 @@ describe('PostRepository.listByAuthor', () => {
     const pool = fakePool([], 0);
 
     await new PostRepository(pool).listByAuthor({
-      autorId: 'author-1',
+      authorId: 'author-1',
       viewerId: 'visitante-1',
     });
 

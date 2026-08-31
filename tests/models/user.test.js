@@ -1,6 +1,6 @@
 const User = require('../../models/user');
 
-const criar = (extras = {}) => new User({
+const create = (extras = {}) => new User({
   id: 'uuid-1',
   name: 'John Doe',
   alias: 'john.doe',
@@ -15,7 +15,7 @@ const criar = (extras = {}) => new User({
 
 describe('User — proteção do hash de password', () => {
   it('não expõe o hash em JSON.stringify', () => {
-    const json = JSON.stringify(criar());
+    const json = JSON.stringify(create());
     expect(json).not.toContain('hashfalso');
     expect(json).not.toContain('passwordHash');
   });
@@ -25,21 +25,21 @@ describe('User — proteção do hash de password', () => {
   });
 
   it('mantém o hash acessível para quem pedir explicitamente', () => {
-    expect(criar().passwordHash).toBe('$2b$12$hashfalso');
+    expect(create().passwordHash).toBe('$2b$12$hashfalso');
   });
 });
 
 describe('User — verificação de password', () => {
   it('aceita a password correta e recusa a errada', async () => {
     const hash = await User.hashPassword('SenhaForte#1');
-    const user = criar({ passwordHash: hash });
+    const user = create({ passwordHash: hash });
 
     await expect(user.verifyPassword('SenhaForte#1')).resolves.toBe(true);
     await expect(user.verifyPassword('outraSenha')).resolves.toBe(false);
   });
 
   it('recusa quando não há hash', async () => {
-    await expect(criar({ passwordHash: null }).verifyPassword('qualquer')).resolves.toBe(false);
+    await expect(create({ passwordHash: null }).verifyPassword('qualquer')).resolves.toBe(false);
   });
 });
 
@@ -49,7 +49,7 @@ describe('User — paraPerfil', () => {
      foto contribui para identificar alguém e não ajuda o visitante a
      decidir se quer seguir a pessoa. */
   it('esconde todos os dados pessoais no perfil público', () => {
-    const perfil = criar().toProfile({ followers: 10, following: 5, isFollowing: true });
+    const perfil = create().toProfile({ followers: 10, following: 5, isFollowing: true });
 
     expect(perfil.email).toBeNull();
     expect(perfil.birthDate).toBeNull();
@@ -64,7 +64,7 @@ describe('User — paraPerfil', () => {
   });
 
   it('mostra os dados pessoais no próprio perfil, e anula isFollowing', () => {
-    const perfil = criar().toProfile({ proprio: true, followers: 10, following: 5 });
+    const perfil = create().toProfile({ own: true, followers: 10, following: 5 });
 
     expect(perfil.email).toBe('john@exemplo.com');
     expect(perfil.birthDate).toBe('1990-05-14');
@@ -73,19 +73,19 @@ describe('User — paraPerfil', () => {
   });
 
   it('deriva o ano de entrada a partir da data de criação', () => {
-    expect(criar().toProfile({}).memberSince).toBe(2026);
+    expect(create().toProfile({}).memberSince).toBe(2026);
   });
 
   it('funciona sem argumento nenhum', () => {
-    expect(() => criar().toProfile()).not.toThrow();
+    expect(() => create().toProfile()).not.toThrow();
   });
     it('funciona sem argumento nenhum', () => {
-    expect(() => criar().toProfile()).not.toThrow();
+    expect(() => create().toProfile()).not.toThrow();
   });
 
   it('devolve a data de birthDate sem conversão de fuso', () => {
-    const perfil = criar({ birthDate: new Date('2004-01-20T02:00:00.000Z') })
-      .toProfile({ proprio: true });
+    const perfil = create({ birthDate: new Date('2004-01-20T02:00:00.000Z') })
+      .toProfile({ own: true });
 
     expect(perfil.birthDate).toBe('2004-01-20');
   });

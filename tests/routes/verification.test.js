@@ -53,9 +53,9 @@ jest.mock('../../repositories/verification_repository', () =>
    enviar existiu, não que a rede funcionou. Chamar o provedor de verdade
    tornaria a suíte lenta, cara e dependente de internet. */
 jest.mock('../../config/email', () => ({
-  MODO_CONSOLE: true,
-  REMETENTE: 'Blabry <teste@exemplo.com>',
-  enviarEmail: jest.fn(async ({ para }) => { mockState.sentEmails.push({ para }); }),
+  CONSOLE_MODE: true,
+  SENDER: 'Blabry <teste@exemplo.com>',
+  sendEmail: jest.fn(async ({ to }) => { mockState.sentEmails.push({ to }); }),
 }));
 
 jest.mock('../../repositories/countries_repository', () =>
@@ -273,7 +273,7 @@ describe('POST /auth/verify-email/resend', () => {
 
     expect(res.status).toBe(200);
     expect(mockState.created).toHaveLength(1);
-    expect(mockState.sentEmails).toEqual([{ para: EMAIL }]);
+    expect(mockState.sentEmails).toEqual([{ to: EMAIL }]);
   });
 
   /* Dado: um código pedido há menos de 60 segundos;
@@ -400,7 +400,7 @@ describe('Exclusão de conta', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.email).toBe('a*****@exemplo.com');
-    expect(mockState.sentEmails).toEqual([{ para: EMAIL }]);
+    expect(mockState.sentEmails).toEqual([{ to: EMAIL }]);
   });
 
   /* Dado: uma requisição sem token;

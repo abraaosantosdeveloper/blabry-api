@@ -39,7 +39,7 @@ const token = () =>
   jwt.sign({ id: USER_ID, name: 'Teste' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
 /** Atalho para a requisição autenticada, com os parâmetros da URL. */
-const buscar = (query) =>
+const search = (query) =>
   request(app).get('/users').query(query).set('Authorization', `Bearer ${token()}`);
 
 const fakeUser = (alias) => ({
@@ -64,7 +64,7 @@ describe('GET /users — termo de busca', () => {
     mockState.users = [fakeUser('abraao'), fakeUser('abrantes')];
     mockState.total = 2;
 
-    const res = await buscar({ q: 'abra' });
+    const res = await search({ q: 'abra' });
 
     expect(res.status).toBe(200);
     expect(res.body.users).toHaveLength(2);
@@ -75,7 +75,7 @@ describe('GET /users — termo de busca', () => {
      base inteira faria o usuário acreditar que aqueles resultados casam com
      o que ele digitou. */
   it('devolve lista vazia para termo com menos de 2 caracteres', async () => {
-    const res = await buscar({ q: 'a' });
+    const res = await search({ q: 'a' });
 
     expect(res.status).toBe(200);
     expect(res.body.users).toEqual([]);
@@ -84,7 +84,7 @@ describe('GET /users — termo de busca', () => {
   });
 
   it('devolve lista vazia quando o termo é omitido', async () => {
-    const res = await buscar({});
+    const res = await search({});
 
     expect(res.status).toBe(200);
     expect(res.body.users).toEqual([]);
@@ -93,12 +93,12 @@ describe('GET /users — termo de busca', () => {
 
   /* O @ é conveniência de quem digita; o alias gravado não o contém. */
   it('remove o @ antes de consultar', async () => {
-    await buscar({ q: '@abraao' });
+    await search({ q: '@abraao' });
     expect(mockState.calls[0].q).toBe('abraao');
   });
 
   it('ignora espaços em volta do termo', async () => {
-    await buscar({ q: '  abraao  ' });
+    await search({ q: '  abraao  ' });
     expect(mockState.calls[0].q).toBe('abraao');
   });
 });
@@ -106,7 +106,7 @@ describe('GET /users — termo de busca', () => {
 describe('GET /users — paginação', () => {
   it('converte página em deslocamento', async () => {
     mockState.total = 30;
-    await buscar({ q: 'abra', page: '3', limit: '8' });
+    await search({ q: 'abra', page: '3', limit: '8' });
 
     // Página 3 com 8 por página começa na 17ª row.
     expect(mockState.calls[0]).toMatchObject({ limit: 8, offset: 16 });
@@ -114,7 +114,7 @@ describe('GET /users — paginação', () => {
 
   it('calcula o total de páginas arredondando para cima', async () => {
     mockState.total = 21;
-    const res = await buscar({ q: 'abra', limit: '8' });
+    const res = await search({ q: 'abra', limit: '8' });
 
     expect(res.body.totalPages).toBe(3);   // 21 / 8 = 2,625
   });
@@ -123,23 +123,23 @@ describe('GET /users — paginação', () => {
      "Página 1 de 0". */
   it('nunca informa zero páginas', async () => {
     mockState.total = 0;
-    const res = await buscar({ q: 'abra' });
+    const res = await search({ q: 'abra' });
 
     expect(res.body.totalPages).toBe(1);
   });
 
   it('limita a quantidade por página ao teto do servidor', async () => {
-    await buscar({ q: 'abra', limit: '100000' });
+    await search({ q: 'abra', limit: '100000' });
     expect(mockState.calls[0].limit).toBe(50);
   });
 
   it('usa os padrões quando os parâmetros não são numéricos', async () => {
-    await buscar({ q: 'abra', page: 'abc', limit: 'xyz' });
+    await search({ q: 'abra', page: 'abc', limit: 'xyz' });
     expect(mockState.calls[0]).toMatchObject({ limit: 8, offset: 0 });
   });
 
   it('trata página negativa como a primeira', async () => {
-    await buscar({ q: 'abra', page: '-5' });
+    await search({ q: 'abra', page: '-5' });
     expect(mockState.calls[0].offset).toBe(0);
   });
 });
@@ -148,12 +148,12 @@ describe('GET /users — identidade', () => {
   /* O identificador de quem busca vem do token, nunca da URL: é o que impede
      alguém de consultar em name de outro usuário. */
   it('usa o usuário do token como visitante', async () => {
-    await buscar({ q: 'abra' });
-    expect(mockState.calls[0].visitanteId).toBe(USER_ID);
+    await search({ q: 'abra' });
+    expect(mockState.calls[0].viewerId).toBe(USER_ID);
   });
 
   it('ignora um identificador enviado na query string', async () => {
-    await buscar({ q: 'abra', userId: 'outro-uuid', viewerId: 'outro-uuid' });
-    expect(mockState.calls[0].visitanteId).toBe(USER_ID);
+    await search({ q: 'abra', userId: 'outro-uuid', viewerId: 'outro-uuid' });
+    expect(mockState.calls[0].viewerId).toBe(USER_ID);
   });
 });
