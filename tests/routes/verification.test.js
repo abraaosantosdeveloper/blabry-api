@@ -76,11 +76,11 @@ const token = () =>
  * `emailVerified` é um getter no modelo real; aqui é um valor simples,
  * porque o que importa ao teste é a resposta, não a derivação.
  */
-const fakeUser = ({ verificado = false } = {}) => ({
+const fakeUser = ({ verified = false } = {}) => ({
   id: USER_ID,
   name: 'Abraão Santos',
   email: EMAIL,
-  emailVerified: verificado,
+  emailVerified: verified,
   async verifyPassword(password) { return password === 'SenhaForte#1'; },
 });
 
@@ -113,7 +113,7 @@ describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
      Então: a API responde 403, e não 401 — a interface precisa distinguir
      "password errada" de "falta confirmar" para levá-lo à tela de código. */
   it('recusa com 403 quando o e-mail não foi confirmado', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
 
     const res = await request(app)
       .post('/auth/login')
@@ -129,7 +129,7 @@ describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
      a confirmação fosse checada antes da password, bastaria digitar um e-mail
      qualquer para descobrir se ele tem conta aqui. */
   it('prioriza 401 quando a password está errada', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
 
     const res = await request(app)
       .post('/auth/login')
@@ -142,7 +142,7 @@ describe('POST /auth/login — bloqueio por e-mail não confirmado', () => {
      Quando: as credenciais estão corretas;
      Então: 200 com token. */
   it('autentica quando o e-mail está confirmado', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
 
     const res = await request(app)
       .post('/auth/login')
@@ -161,7 +161,7 @@ describe('POST /auth/verify-email', () => {
      Então: o e-mail é marcado como confirmado e a API devolve o token —
      pedir login logo após digitar o código seria um obstáculo sem função. */
   it('confirma o e-mail e devolve o token', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -178,7 +178,7 @@ describe('POST /auth/verify-email', () => {
      Então: 400, o e-mail não é confirmado, e a tentativa é contabilizada —
      é ela que torna o chute caro. */
   it('recusa código errado e registra a tentativa', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -197,7 +197,7 @@ describe('POST /auth/verify-email', () => {
   it.each([['curto', '1234'], ['letras', 'abcdef'], ['vazio', '']])(
     'recusa código %s sem consultar o repositório',
     async (_rotulo, code) => {
-      mockState.user = fakeUser({ verificado: false });
+      mockState.user = fakeUser({ verified: false });
       mockState.activeCode = await fakeActiveCode();
 
       const res = await request(app)
@@ -215,7 +215,7 @@ describe('POST /auth/verify-email', () => {
      Então: 400 com a mesma mensagem dos demais casos. Detalhar qual dos
      três é diria a um atacante se vale a pena continuar. */
   it('responde 400 quando não há código ativo', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.activeCode = null;
 
     const res = await request(app)
@@ -231,7 +231,7 @@ describe('POST /auth/verify-email', () => {
      Então: ela é recusada. Sem essa checagem haveria uma janela entre
      verificar e marcar, e as duas passariam. */
   it('recusa quando o código já foi consumido em paralelo', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.activeCode = await fakeActiveCode();
     mockState.consumeReturns = 0;
 
@@ -265,7 +265,7 @@ describe('POST /auth/verify-email/resend', () => {
      Quando: o usuário pede um novo código;
      Então: um código é gravado e um e-mail sai. */
   it('emite um novo código', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
 
     const res = await request(app)
       .post('/auth/verify-email/resend')
@@ -281,7 +281,7 @@ describe('POST /auth/verify-email/resend', () => {
      Então: 429 — o limit impede que a caixa de entrada de alguém seja
      usada como alvo de spam por quem conhece o e-mail. */
   it('recusa reenvio antes do intervalo mínimo', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.secondsSinceLast = 10;
 
     const res = await request(app)
@@ -300,7 +300,7 @@ describe('POST /auth/verify-email/resend', () => {
     ['inexistente', null],
     ['já confirmado', 'verificado'],
   ])('responde 200 sem enviar nada para e-mail %s', async (_rotulo, scenario) => {
-    mockState.user = scenario === 'verificado' ? fakeUser({ verificado: true }) : null;
+    mockState.user = scenario === 'verificado' ? fakeUser({ verified: true }) : null;
 
     const res = await request(app)
       .post('/auth/verify-email/resend')
@@ -318,7 +318,7 @@ describe('POST /auth/password', () => {
      Quando: a troca é pedida;
      Então: o hash é gravado — e nunca a password em text. */
   it('troca a password e grava um hash', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -340,7 +340,7 @@ describe('POST /auth/password', () => {
     ['sem maiúscula', 'senhafraca#1'],
     ['sem caractere especial', 'SenhaFraca11'],
   ])('recusa password %s', async (_rotulo, newPassword) => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -357,7 +357,7 @@ describe('POST /auth/password', () => {
      que tem acesso a ele, e exigir a mesma prova duas vezes não acrescenta
      segurança. */
   it('confirma o e-mail junto com a troca de password', async () => {
-    mockState.user = fakeUser({ verificado: false });
+    mockState.user = fakeUser({ verified: false });
     mockState.activeCode = await fakeActiveCode();
 
     await request(app)
@@ -371,7 +371,7 @@ describe('POST /auth/password', () => {
      Quando: a troca é pedida;
      Então: 400 e a password permanece. */
   it('recusa código errado', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -392,10 +392,10 @@ describe('Exclusão de conta', () => {
      endereço mascarado — confirma o destino sem escrever o endereço
      inteiro em uma tela que outra pessoa pode estar vendo. */
   it('envia o código e devolve o e-mail mascarado', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
 
     const res = await request(app)
-      .post('/users/me/exclusao/code')
+      .post('/users/me/deletion/code')
       .set('Authorization', `Bearer ${token()}`);
 
     expect(res.status).toBe(200);
@@ -408,7 +408,7 @@ describe('Exclusão de conta', () => {
      Então: 401 e nenhum e-mail sai. Excluir é ação do dono da sessão, não
      de quem conhece um endereço. */
   it('exige autenticação para pedir o código', async () => {
-    const res = await request(app).post('/users/me/exclusao/code');
+    const res = await request(app).post('/users/me/deletion/code');
 
     expect(res.status).toBe(401);
     expect(mockState.sentEmails).toHaveLength(0);
@@ -418,7 +418,7 @@ describe('Exclusão de conta', () => {
      Quando: a exclusão é confirmada;
      Então: 204 e a conta é marcada como excluída. */
   it('exclui a conta com token e código válidos', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -434,7 +434,7 @@ describe('Exclusão de conta', () => {
      Quando: o código vai na query;
      Então: funciona igual — a rota aceita as duas formas. */
   it('aceita o código pela query string', async () => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
@@ -454,7 +454,7 @@ describe('Exclusão de conta', () => {
     ['sem código', undefined],
     ['código errado', '999999'],
   ])('recusa a exclusão %s', async (_rotulo, code) => {
-    mockState.user = fakeUser({ verificado: true });
+    mockState.user = fakeUser({ verified: true });
     mockState.activeCode = await fakeActiveCode();
 
     const res = await request(app)
