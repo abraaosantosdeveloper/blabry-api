@@ -29,6 +29,10 @@ create table if not exists user(
     full_name varchar(100) not null,
     alias varchar(100) not null unique,
     email varchar(100) not null unique,
+    /* Quando o e-mail foi confirmado por código. NULL = não confirmado,
+       e o login é recusado enquanto for NULL. É data, e não booleano,
+       porque responde também "quando?" pelo mesmo espaço. */
+    email_verified_at datetime null default null,
     password_hash varchar(60) not null,
     nationality char(3) not null,
     birth_date date not null,
@@ -157,6 +161,32 @@ create table if not exists follow(
     unique key unique_follow (follower_id, following_id),
     foreign key(follower_id) references user(id) on delete cascade,
     foreign key(following_id) references user(id) on delete cascade
+);
+
+
+/* Códigos de verificação enviados por e-mail.
+
+   Três propósitos: confirmar conta nova, trocar senha e excluir conta.
+   O código é gravado como hash — se a tabela vazar, os hashes não
+   permitem entrar em conta alguma. `attempts` limita o chute (um código
+   de 6 dígitos é adivinhável por script sem esse limite) e `used_at`
+   impede que o mesmo código sirva duas vezes. */
+create table if not exists verification_code(
+    id char(36) not null,
+    user_id char(36) not null,
+    purpose enum('signup', 'password_reset', 'account_deletion') not null,
+    code_hash char(60) not null,
+    expires_at datetime not null,
+    used_at datetime null default null,
+    attempts int not null default 0,
+    created_at datetime default current_timestamp,
+
+    primary key(id),
+    foreign key(user_id) references user(id) on delete cascade,
+
+    /* A consulta quente é "o último código deste usuário para este
+       propósito"; o índice cobre exatamente ela. */
+    index idx_verificacao_usuario_proposito (user_id, purpose, created_at)
 );
 
 /* Curtidas dos comentários */
