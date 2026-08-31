@@ -8,6 +8,15 @@ class CountriesRepository {
     this.pool = pool;
   }
 
+  /** Verifica se um código ISO existe na tabela. */
+  async existe(codigo) {
+    const [rows] = await this.pool.execute(
+      'SELECT 1 FROM countries WHERE country = ? LIMIT 1',
+      [codigo]
+    );
+    return rows.length > 0;
+  }
+
   /** Lista todos os países cadastrados, em ordem alfabética. */
   async listarPaises() {
     const [rows] = await this.pool.query(
