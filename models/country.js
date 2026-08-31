@@ -9,8 +9,8 @@ class Country {
   }
 
   /** Cria um Country a partir de uma linha crua do MySQL. */
-  static deLinha(linha) {
-    return new Country({ country: linha.country, name: linha.name });
+  static fromRow(row) {
+    return new Country({ country: row.country, name: row.name });
   }
 
   /** Chamado automaticamente pelo res.json(). Define o que a API expõe. */

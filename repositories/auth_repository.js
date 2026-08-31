@@ -9,26 +9,26 @@ class AuthRepository {
   }
 
   /** Colunas devolvidas ao montar um User. */
-  static get COLUNAS() {
+  static get COLUMNS() {
     return 'id, full_name, alias, email, email_verified_at, password_hash, nationality, birth_date, pic_url, created_at, deleted_at';
   }
 
   /** Busca por email. Retorna um User ou null. */
-  async buscarPorEmail(email) {
+  async findByEmail(email) {
     const [rows] = await this.pool.execute(
-      `SELECT ${AuthRepository.COLUNAS} FROM user WHERE email = ? AND deleted_at IS NULL`,
+      `SELECT ${AuthRepository.COLUMNS} FROM user WHERE email = ? AND deleted_at IS NULL`,
       [email]
     );
-    return rows[0] ? User.deLinha(rows[0]) : null;
+    return rows[0] ? User.fromRow(rows[0]) : null;
   }
 
   /** Busca pelo @ do usuário. Retorna um User ou null. */
-  async buscarPorApelido(apelido) {
+  async findByAlias(alias) {
     const [rows] = await this.pool.execute(
-      `SELECT ${AuthRepository.COLUNAS} FROM user WHERE alias = ? AND deleted_at IS NULL`,
-      [apelido]
+      `SELECT ${AuthRepository.COLUMNS} FROM user WHERE alias = ? AND deleted_at IS NULL`,
+      [alias]
     );
-    return rows[0] ? User.deLinha(rows[0]) : null;
+    return rows[0] ? User.fromRow(rows[0]) : null;
   }
 
   /**
@@ -38,28 +38,28 @@ class AuthRepository {
    * identidade já está provada e o e-mail precisa ser lido do banco — nunca
    * aceito do corpo da requisição, que o cliente controla.
    */
-  async buscarPorId(id) {
+  async findById(id) {
     const [rows] = await this.pool.execute(
-      `SELECT ${AuthRepository.COLUNAS} FROM user WHERE id = ? AND deleted_at IS NULL`,
+      `SELECT ${AuthRepository.COLUMNS} FROM user WHERE id = ? AND deleted_at IS NULL`,
       [id]
     );
-    return rows[0] ? User.deLinha(rows[0]) : null;
+    return rows[0] ? User.fromRow(rows[0]) : null;
   }
 
   /**
    * Persiste um User já montado pelo service.
-   * @param {User} usuario
+   * @param {User} user
    */
-  async criar(usuario) {
-    const linha = usuario.paraLinha();
+  async create(user) {
+    const row = user.toRow();
     await this.pool.execute(
       'INSERT INTO user (id, full_name, alias, email, password_hash, nationality, birth_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [
-        linha.id, linha.full_name, linha.alias, linha.email,
-        linha.password_hash, linha.nationality, linha.birth_date,
+        row.id, row.full_name, row.alias, row.email,
+        row.password_hash, row.nationality, row.birth_date,
       ]
     );
-    return usuario;
+    return user;
   }
 
   /**
@@ -71,12 +71,12 @@ class AuthRepository {
    *
    * @returns {Promise<number>} linhas afetadas
    */
-  async confirmarEmail(usuarioId) {
-    const [resultado] = await this.pool.execute(
+  async confirmEmail(userId) {
+    const [result] = await this.pool.execute(
       'UPDATE user SET email_verified_at = NOW() WHERE id = ? AND email_verified_at IS NULL',
-      [usuarioId]
+      [userId]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
 
   /**
@@ -85,12 +85,12 @@ class AuthRepository {
    * Recebe o hash pronto: o repositório nunca vê a senha em texto, e a
    * política de hashing continua sendo do modelo `User`.
    */
-  async atualizarSenha(usuarioId, senhaHash) {
-    const [resultado] = await this.pool.execute(
+  async updatePassword(userId, passwordHash) {
+    const [result] = await this.pool.execute(
       'UPDATE user SET password_hash = ? WHERE id = ? AND deleted_at IS NULL',
-      [senhaHash, usuarioId]
+      [passwordHash, userId]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
 
   /**
@@ -109,12 +109,12 @@ class AuthRepository {
    *   `AND deleted_at IS NULL` garante idempotência: excluir de novo devolve
    *   0 linhas em vez de mover a data para frente.
    */
-  async excluirConta(usuarioId) {
-    const [resultado] = await this.pool.execute(
+  async deleteAccount(userId) {
+    const [result] = await this.pool.execute(
       'UPDATE user SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL',
-      [usuarioId]
+      [userId]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
 }
 

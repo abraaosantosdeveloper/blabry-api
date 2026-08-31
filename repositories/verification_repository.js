@@ -5,7 +5,7 @@
  * é o que permite testar a montagem do SQL e a ordem dos parâmetros com um
  * pool falso, sem banco algum.
  */
-class VerificacaoRepository {
+class VerificationRepository {
   /**
    * @param {import('mysql2/promise').Pool} pool
    */
@@ -20,13 +20,13 @@ class VerificacaoRepository {
    * serviço; o repositório não conhece a política de hashing, apenas persiste
    * o que recebe — a mesma divisão usada com a senha do usuário.
    *
-   * @param {{id: string, usuarioId: string, proposito: string, codigoHash: string, expiraEm: Date}} dados
+   * @param {{id: string, userId: string, purpose: string, codeHash: string, expiresAt: Date}} dados
    */
-  async criar({ id, usuarioId, proposito, codigoHash, expiraEm }) {
+  async create({ id, userId, purpose, codeHash, expiresAt }) {
     await this.pool.execute(
       `INSERT INTO verification_code (id, user_id, purpose, code_hash, expires_at)
        VALUES (?, ?, ?, ?, ?)`,
-      [id, usuarioId, proposito, codigoHash, expiraEm]
+      [id, userId, purpose, codeHash, expiresAt]
     );
   }
 
@@ -36,7 +36,7 @@ class VerificacaoRepository {
    * "Utilizável" tem três condições, todas no WHERE:
    *   - não foi consumido (`used_at IS NULL`);
    *   - não expirou (`expires_at > NOW()`);
-   *   - ainda tem tentativas (`attempts < ?`).
+   *   - ainda tem attempts (`attempts < ?`).
    *
    * Filtrar no banco, e não em JavaScript depois, importa: um código expirado
    * que chegasse até aqui poderia ser comparado por engano em alguma
@@ -45,9 +45,9 @@ class VerificacaoRepository {
    * `LIMIT 1` com `ORDER BY created_at DESC` porque só o último vale — pedir
    * um novo código invalida na prática os anteriores.
    *
-   * @returns {Promise<{id: string, codigoHash: string, tentativas: number}|null>}
+   * @returns {Promise<{id: string, codeHash: string, attempts: number}|null>}
    */
-  async buscarAtivo(usuarioId, proposito, tentativasMaximas) {
+  async findActive(userId, purpose, maxAttempts) {
     const [rows] = await this.pool.execute(
       `SELECT id, code_hash, attempts
          FROM verification_code
@@ -58,7 +58,7 @@ class VerificacaoRepository {
           AND attempts < ?
         ORDER BY created_at DESC
         LIMIT 1`,
-      [usuarioId, proposito, tentativasMaximas]
+      [userId, purpose, maxAttempts]
     );
 
     if (!rows[0]) return null;
@@ -67,8 +67,8 @@ class VerificacaoRepository {
     // nomes do banco param e os nomes do domínio começam.
     return {
       id: rows[0].id,
-      codigoHash: rows[0].code_hash,
-      tentativas: Number(rows[0].attempts),
+      codeHash: rows[0].code_hash,
+      attempts: Number(rows[0].attempts),
     };
   }
 
@@ -80,21 +80,21 @@ class VerificacaoRepository {
    *
    * @returns {Promise<number|null>}
    */
-  async segundosDesdeUltimo(usuarioId, proposito) {
+  async secondsSinceLast(userId, purpose) {
     const [rows] = await this.pool.execute(
-      `SELECT TIMESTAMPDIFF(SECOND, created_at, NOW()) AS segundos
+      `SELECT TIMESTAMPDIFF(SECOND, created_at, NOW()) AS seconds
          FROM verification_code
         WHERE user_id = ? AND purpose = ?
         ORDER BY created_at DESC
         LIMIT 1`,
-      [usuarioId, proposito]
+      [userId, purpose]
     );
 
     return rows[0] ? Number(rows[0].segundos) : null;
   }
 
-  /** Incrementa o contador de tentativas erradas de um código. */
-  async registrarTentativa(id) {
+  /** Incrementa o contador de attempts erradas de um código. */
+  async registerAttempt(id) {
     await this.pool.execute(
       'UPDATE verification_code SET attempts = attempts + 1 WHERE id = ?',
       [id]
@@ -112,12 +112,12 @@ class VerificacaoRepository {
    *
    * @returns {Promise<number>} linhas afetadas (1 = consumido agora, 0 = já era)
    */
-  async consumir(id) {
-    const [resultado] = await this.pool.execute(
+  async consume(id) {
+    const [result] = await this.pool.execute(
       'UPDATE verification_code SET used_at = NOW() WHERE id = ? AND used_at IS NULL',
       [id]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
 
   /**
@@ -126,14 +126,14 @@ class VerificacaoRepository {
    * Chamado depois de um uso bem-sucedido: trocada a senha, nenhum código
    * antigo de troca de senha deve continuar valendo.
    */
-  async invalidarPendentes(usuarioId, proposito) {
+  async invalidatePending(userId, purpose) {
     await this.pool.execute(
       `UPDATE verification_code
           SET used_at = NOW()
         WHERE user_id = ? AND purpose = ? AND used_at IS NULL`,
-      [usuarioId, proposito]
+      [userId, purpose]
     );
   }
 }
 
-module.exports = VerificacaoRepository;
+module.exports = VerificationRepository;

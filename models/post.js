@@ -1,86 +1,86 @@
 /**
  * Representa uma publicação da tabela `post`.
  *
- * `autorId` fica fora do JSON: o cliente identifica o autor pelo @, e expor
+ * `authorId` fica fora do JSON: o cliente identifica o autor pelo @, e expor
  * o UUID de outro usuário não serve a nada na interface. Ele existe aqui
  * porque é o que decide a autorização de exclusão.
  */
 class Post {
   constructor({
-    id, texto, criadoEm, editadoEm,
-    autorId, autorNome, autorAlias, autorFotoUrl, autorBio,
-    curtidas = 0, comentarios = 0, curtido = false,
+    id, text, createdAt, editedAt,
+    authorId, authorName, authorAlias, authorPhotoUrl, authorBio,
+    likes = 0, comments = 0, liked = false,
   }) {
     this.id = id;
-    this.texto = texto;
-    this.criadoEm = criadoEm;
+    this.text = text;
+    this.createdAt = createdAt;
     // Preenchido apenas se a publicação já foi editada.
-    this.editadoEm = editadoEm ?? null;
-    this.curtidas = curtidas;
-    this.comentarios = comentarios;
-    this.curtido = curtido;
+    this.editedAt = editedAt ?? null;
+    this.likes = likes;
+    this.comments = comments;
+    this.liked = liked;
 
-    this.autor = {
-      nome: autorNome,
-      alias: autorAlias,
-      fotoUrl: autorFotoUrl ?? null,
+    this.author = {
+      name: authorName,
+      alias: authorAlias,
+      photoUrl: authorPhotoUrl ?? null,
       /* A bio acompanha o autor porque a página dedicada da publicação a
          exibe: quem abre um link de post vindo de fora costuma não conhecer
          quem escreveu. É dado público — o mesmo que o perfil já mostra a
          qualquer visitante —, então não amplia nada do que já é visível. */
-      bio: autorBio ?? null,
+      bio: authorBio ?? null,
     };
 
-    Object.defineProperty(this, 'autorId', {
-      value: autorId,
+    Object.defineProperty(this, 'authorId', {
+      value: authorId,
       enumerable: false,
       writable: false,
     });
   }
 
   /** Cria um Post a partir de uma linha do MySQL já com JOIN em `user`. */
-  static deLinha(linha) {
+  static fromRow(row) {
     return new Post({
-      id: linha.id,
-      texto: linha.content,
-      criadoEm: linha.created_at,
-      editadoEm: linha.edited_at,
-      autorId: linha.user_id,
-      autorNome: linha.full_name,
-      autorAlias: linha.alias,
-      autorFotoUrl: linha.pic_url,
-      autorBio: linha.bio,
-      curtidas: Number(linha.curtidas ?? 0),
-      comentarios: Number(linha.comentarios ?? 0),
-      curtido: Boolean(linha.curtido),
+      id: row.id,
+      text: row.content,
+      createdAt: row.created_at,
+      editedAt: row.edited_at,
+      authorId: row.user_id,
+      authorName: row.full_name,
+      authorAlias: row.alias,
+      authorPhotoUrl: row.pic_url,
+      authorBio: row.bio,
+      likes: Number(row.likes ?? 0),
+      comments: Number(row.comments ?? 0),
+      liked: Boolean(row.liked),
     });
   }
 
   /** Linha pronta para o INSERT, com os nomes de coluna do banco. */
-  paraLinha() {
+  toRow() {
     return {
       id: this.id,
-      user_id: this.autorId,
-      content: this.texto,
+      user_id: this.authorId,
+      content: this.text,
     };
   }
 
   /** Regra de autoria: só o dono pode excluir. */
-  pertenceA(usuarioId) {
-    return Boolean(usuarioId) && this.autorId === usuarioId;
+  belongsTo(userId) {
+    return Boolean(userId) && this.authorId === userId;
   }
 
   /** Define o que a API expõe. Chamado automaticamente por res.json(). */
   toJSON() {
     return {
       id: this.id,
-      texto: this.texto,
-      criadoEm: this.criadoEm,
-      editadoEm: this.editadoEm,
-      autor: this.autor,
-      curtidas: this.curtidas,
-      comentarios: this.comentarios,
-      curtido: this.curtido,
+      text: this.text,
+      createdAt: this.createdAt,
+      editedAt: this.editedAt,
+      author: this.author,
+      likes: this.likes,
+      comments: this.comments,
+      liked: this.liked,
     };
   }
 }

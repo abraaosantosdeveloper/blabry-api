@@ -8,21 +8,21 @@ class CountriesRepository {
     this.pool = pool;
   }
 
-  /** Verifica se um código ISO existe na tabela. */
-  async existe(codigo) {
+  /** Verifica se um código ISO exists na tabela. */
+  async exists(code) {
     const [rows] = await this.pool.execute(
       'SELECT 1 FROM countries WHERE country = ? LIMIT 1',
-      [codigo]
+      [code]
     );
     return rows.length > 0;
   }
 
   /** Lista todos os países cadastrados, em ordem alfabética. */
-  async listarPaises() {
+  async listAll() {
     const [rows] = await this.pool.query(
       'SELECT country, name FROM countries ORDER BY name COLLATE utf8mb4_unicode_ci'
     );
-    return rows.map(Country.deLinha);
+    return rows.map(Country.fromRow);
   }
 }
 

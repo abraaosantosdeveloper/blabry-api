@@ -5,7 +5,7 @@ class CommentRepository {
     this.pool = pool;
   }
 
-  static get COLUNAS() {
+  static get COLUMNS() {
     return `c.id, c.post_id, c.user_id, c.content, c.created_at, c.edited_at,
             u.full_name, u.alias, u.pic_url`;
   }
@@ -17,17 +17,17 @@ class CommentRepository {
    * e as páginas seguintes trazem o que veio depois. É o oposto do feed,
    * onde o mais novo vem primeiro.
    */
-  async listarPorPost(postId, { limite = 10, offset = 0 } = {}) {
-    if (!Number.isInteger(limite) || !Number.isInteger(offset))
-      throw new TypeError('limite e offset devem ser inteiros');
+  async listByPost(postId, { limit = 10, offset = 0 } = {}) {
+    if (!Number.isInteger(limit) || !Number.isInteger(offset))
+      throw new TypeError('limit e offset devem ser inteiros');
 
     const [rows] = await this.pool.execute(
-      `SELECT ${CommentRepository.COLUNAS}
+      `SELECT ${CommentRepository.COLUMNS}
          FROM comment c
          JOIN user u ON u.id = c.user_id
         WHERE c.post_id = ? AND u.deleted_at IS NULL
         ORDER BY c.created_at ASC, c.id ASC
-        LIMIT ${limite} OFFSET ${offset}`,
+        LIMIT ${limit} OFFSET ${offset}`,
       [postId]
     );
 
@@ -39,51 +39,51 @@ class CommentRepository {
       [postId]
     );
 
-    return { comentarios: rows.map(Comment.deLinha), total: Number(total) };
+    return { comments: rows.map(Comment.fromRow), total: Number(total) };
   }
 
-  async criar(comentario) {
-    const linha = comentario.paraLinha();
+  async create(comment) {
+    const row = comment.toRow();
 
     await this.pool.execute(
       'INSERT INTO comment (id, post_id, user_id, content) VALUES (?, ?, ?, ?)',
-      [linha.id, linha.post_id, linha.user_id, linha.content]
+      [row.id, row.post_id, row.user_id, row.content]
     );
 
-    return this.buscarPorId(linha.id);
+    return this.buscarPorId(row.id);
   }
 
-  async buscarPorId(id) {
+  async findById(id) {
     const [rows] = await this.pool.execute(
-      `SELECT ${CommentRepository.COLUNAS}
+      `SELECT ${CommentRepository.COLUMNS}
          FROM comment c
          JOIN user u ON u.id = c.user_id
         WHERE c.id = ?`,
       [id]
     );
-    return rows[0] ? Comment.deLinha(rows[0]) : null;
+    return rows[0] ? Comment.fromRow(rows[0]) : null;
   }
 
   /** Autoria no WHERE, como no post: sem janela entre checar e apagar. */
-  async excluir(id, autorId) {
-    const [resultado] = await this.pool.execute(
+  async remove(id, authorId) {
+    const [result] = await this.pool.execute(
       'DELETE FROM comment WHERE id = ? AND user_id = ?',
-      [id, autorId]
+      [id, authorId]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
     /**
    * Atualiza o conteúdo e marca a edição.
    * A autoria está no WHERE: sem janela entre verificar e escrever.
    */
-  async atualizar(id, autorId, conteudo) {
-    const [resultado] = await this.pool.execute(
+  async update(id, authorId, content) {
+    const [result] = await this.pool.execute(
       `UPDATE comment
           SET content = ?, edited_at = NOW()
         WHERE id = ? AND user_id = ?`,
-      [conteudo, id, autorId]
+      [content, id, authorId]
     );
-    return resultado.affectedRows;
+    return result.affectedRows;
   }
 }
 
