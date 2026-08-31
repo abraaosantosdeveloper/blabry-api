@@ -10,16 +10,16 @@ const crypto = require('crypto');
  */
 
 /** Quantidade de dígitos do código. */
-const TAMANHO = 6;
+const LENGTH = 6;
 
 /** Validade, em minutos. */
-const VALIDADE_MINUTOS = 15;
+const VALIDITY_MINUTES = 15;
 
 /** Tentativas erradas toleradas antes do código ser invalidado. */
-const TENTATIVAS_MAXIMAS = 5;
+const MAX_ATTEMPTS = 5;
 
 /** Intervalo mínimo, em segundos, entre dois pedidos do mesmo propósito. */
-const INTERVALO_REENVIO_SEGUNDOS = 60;
+const RESEND_INTERVAL_SECONDS = 60;
 
 /**
  * Os três propósitos possíveis, espelhando o ENUM da coluna `purpose`.
@@ -27,14 +27,14 @@ const INTERVALO_REENVIO_SEGUNDOS = 60;
  * O objeto é congelado para que ninguém acrescente um propósito em tempo de
  * execução: o banco recusaria o valor, e o erro apareceria longe da causa.
  */
-const PROPOSITOS = Object.freeze({
-  CADASTRO: 'signup',
-  SENHA: 'password_reset',
-  EXCLUSAO: 'account_deletion',
+const PURPOSES = Object.freeze({
+  SIGNUP: 'signup',
+  PASSWORD_RESET: 'password_reset',
+  ACCOUNT_DELETION: 'account_deletion',
 });
 
 /**
- * Gera um código numérico de `TAMANHO` dígitos.
+ * Gera um código numérico de `LENGTH` dígitos.
  *
  * Usa `crypto.randomInt`, e não `Math.random`. `Math.random` não é
  * criptograficamente seguro: sua sequência é previsível a partir de
@@ -44,19 +44,19 @@ const PROPOSITOS = Object.freeze({
  * `padStart` preserva zeros à esquerda — 42 vira "000042". Sem isso, o
  * espaço de códigos encolheria e alguns códigos teriam menos dígitos.
  *
- * @returns {string} código com exatamente TAMANHO dígitos
+ * @returns {string} código com exatamente LENGTH dígitos
  */
-function gerarCodigo() {
-  const maximo = 10 ** TAMANHO;
-  return String(crypto.randomInt(0, maximo)).padStart(TAMANHO, '0');
+function generateCode() {
+  const max = 10 ** LENGTH;
+  return String(crypto.randomInt(0, max)).padStart(LENGTH, '0');
 }
 
 /**
  * Momento em que um código emitido agora deixa de valer.
  * @returns {Date}
  */
-function expiraEm() {
-  return new Date(Date.now() + VALIDADE_MINUTOS * 60 * 1000);
+function expiresAt() {
+  return new Date(Date.now() + VALIDITY_MINUTES * 60 * 1000);
 }
 
 /**
@@ -66,20 +66,20 @@ function expiraEm() {
  * de gastar uma comparação de hash (bcrypt é lento de propósito) e antes de
  * consumir uma das tentativas do usuário.
  *
- * @param {any} valor
+ * @param {any} value
  * @returns {boolean}
  */
-function formatoValido(valor) {
-  return new RegExp(`^\\d{${TAMANHO}}$`).test(String(valor ?? '').trim());
+function validFormat(value) {
+  return new RegExp(`^\\d{${LENGTH}}$`).test(String(value ?? '').trim());
 }
 
 module.exports = {
-  TAMANHO,
-  VALIDADE_MINUTOS,
-  TENTATIVAS_MAXIMAS,
-  INTERVALO_REENVIO_SEGUNDOS,
-  PROPOSITOS,
-  gerarCodigo,
-  expiraEm,
-  formatoValido,
+  LENGTH,
+  VALIDITY_MINUTES,
+  MAX_ATTEMPTS,
+  RESEND_INTERVAL_SECONDS,
+  PURPOSES,
+  generateCode,
+  expiresAt,
+  validFormat,
 };

@@ -19,8 +19,8 @@ const commentController = require('../controllers/comment_controller');
  *       `curtido` indica se o usuário do token curtiu — todos vêm do banco,
  *       nunca de contagem mantida no cliente.
  *     parameters:
- *       - $ref: '#/components/parameters/Pagina'
- *       - $ref: '#/components/parameters/Limite'
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
  *       - name: q
  *         in: query
  *         schema: { type: string, minLength: 3 }
@@ -41,11 +41,11 @@ const commentController = require('../controllers/comment_controller');
  *                     posts:
  *                       type: array
  *                       items: { $ref: '#/components/schemas/Post' }
- *                 - $ref: '#/components/schemas/Paginacao'
+ *                 - $ref: '#/components/schemas/Pagination'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  *   post:
  *     tags: [Publicações]
  *     summary: Cria uma publicação
@@ -61,7 +61,7 @@ const commentController = require('../controllers/comment_controller');
  *             type: object
  *             required: [texto]
  *             properties:
- *               texto:
+ *               text:
  *                 type: string
  *                 minLength: 1
  *                 maxLength: 280
@@ -76,14 +76,14 @@ const commentController = require('../controllers/comment_controller');
  *         description: Texto vazio ou acima de 280 caracteres
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.get('/', postController.listar);
-router.post('/', postController.criar);
+router.get('/', postController.list);
+router.post('/', postController.create);
 
 /**
  * @swagger
@@ -106,11 +106,11 @@ router.post('/', postController.criar);
  *         description: Estado da curtida
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Curtida' }
+ *             schema: { $ref: '#/components/schemas/Like' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *   delete:
  *     tags: [Publicações]
  *     summary: Remove a curtida
@@ -125,14 +125,14 @@ router.post('/', postController.criar);
  *         description: Estado da curtida
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Curtida' }
+ *             schema: { $ref: '#/components/schemas/Like' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  */
-router.post('/:id/like', postController.curtir);
-router.delete('/:id/like', postController.descurtir);
+router.post('/:id/like', postController.like);
+router.delete('/:id/like', postController.unlike);
 
 /**
  * @swagger
@@ -148,8 +148,8 @@ router.delete('/:id/like', postController.descurtir);
  *         in: path
  *         required: true
  *         schema: { type: string, format: uuid }
- *       - $ref: '#/components/parameters/Pagina'
- *       - $ref: '#/components/parameters/Limite'
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
  *     responses:
  *       200:
  *         description: Página de comentários
@@ -159,14 +159,14 @@ router.delete('/:id/like', postController.descurtir);
  *               allOf:
  *                 - type: object
  *                   properties:
- *                     comentarios:
+ *                     comments:
  *                       type: array
- *                       items: { $ref: '#/components/schemas/Comentario' }
- *                 - $ref: '#/components/schemas/Paginacao'
+ *                       items: { $ref: '#/components/schemas/Comment' }
+ *                 - $ref: '#/components/schemas/Pagination'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *   post:
  *     tags: [Publicações]
  *     summary: Comenta em uma publicação
@@ -183,29 +183,29 @@ router.delete('/:id/like', postController.descurtir);
  *             type: object
  *             required: [texto]
  *             properties:
- *               texto: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 280 }
  *     responses:
  *       201:
  *         description: Comentário criado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Comentario' }
+ *             schema: { $ref: '#/components/schemas/Comment' }
  *       400:
  *         description: Texto vazio ou acima de 280 caracteres
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  */
-router.get('/:id/comments', commentController.listar);
-router.post('/:id/comments', commentController.criar);
+router.get('/:id/comments', commentController.list);
+router.post('/:id/comments', commentController.create);
 
 /**
  * @swagger
- * /posts/{id}/comments/{comentarioId}:
+ * /posts/{id}/comments/{commentId}:
  *   patch:
  *     tags: [Publicações]
  *     summary: Edita um comentário
@@ -221,7 +221,7 @@ router.post('/:id/comments', commentController.criar);
  *         in: path
  *         required: true
  *         schema: { type: string, format: uuid }
- *       - name: comentarioId
+ *       - name: commentId
  *         in: path
  *         required: true
  *         schema: { type: string, format: uuid }
@@ -233,38 +233,38 @@ router.post('/:id/comments', commentController.criar);
  *             type: object
  *             required: [texto]
  *             properties:
- *               texto: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 280 }
  *     responses:
  *       200:
  *         description: Comentário atualizado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Comentario' }
+ *             schema: { $ref: '#/components/schemas/Comment' }
  *       400:
  *         description: Texto vazio ou acima de 280 caracteres
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         description: O comentário pertence a outro usuário
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       409:
  *         description: Janela de 15 minutos encerrada
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.patch('/:id/comments/:comentarioId', commentController.editar);
+router.patch('/:id/comments/:commentId', commentController.edit);
 
 /**
  * @swagger
- * /posts/{id}/comments/{comentarioId}:
+ * /posts/{id}/comments/{commentId}:
  *   delete:
  *     tags: [Publicações]
  *     summary: Exclui um comentário
@@ -274,7 +274,7 @@ router.patch('/:id/comments/:comentarioId', commentController.editar);
  *         in: path
  *         required: true
  *         schema: { type: string, format: uuid }
- *       - name: comentarioId
+ *       - name: commentId
  *         in: path
  *         required: true
  *         schema: { type: string, format: uuid }
@@ -282,16 +282,16 @@ router.patch('/:id/comments/:comentarioId', commentController.editar);
  *       204:
  *         description: Comentário excluído
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         description: O comentário pertence a outro usuário
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  */
-router.delete('/:id/comments/:comentarioId', commentController.excluir);
+router.delete('/:id/comments/:commentId', commentController.remove);
 
 /**
  * @swagger
@@ -317,7 +317,7 @@ router.delete('/:id/comments/:comentarioId', commentController.excluir);
  *             type: object
  *             required: [texto]
  *             properties:
- *               texto: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 280 }
  *     responses:
  *       200:
  *         description: Publicação atualizada
@@ -328,21 +328,21 @@ router.delete('/:id/comments/:comentarioId', commentController.excluir);
  *         description: Texto vazio ou acima de 280 caracteres
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         description: A publicação pertence a outro usuário
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       409:
  *         description: Janela de 15 minutos encerrada
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
 /**
  * @swagger
@@ -372,15 +372,15 @@ router.delete('/:id/comments/:comentarioId', commentController.excluir);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Post' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.get('/:id', postController.buscarPorId);
+router.get('/:id', postController.findById);
 
-router.patch('/:id', postController.editar);
+router.patch('/:id', postController.edit);
 
 /**
  * @swagger
@@ -403,17 +403,17 @@ router.patch('/:id', postController.editar);
  *       204:
  *         description: Publicação excluída
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         description: A publicação pertence a outro usuário
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.delete('/:id', postController.excluir);
+router.delete('/:id', postController.remove);
 
 module.exports = router;

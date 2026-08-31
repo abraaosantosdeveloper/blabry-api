@@ -30,8 +30,8 @@ const countriesController = require('../controllers/countries_controller');
  *               - country: BRA
  *                 name: Brasil
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.get('/', countriesController.listarPaises);
+router.get('/', countriesController.listAll);
 
 module.exports = router;

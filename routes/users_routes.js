@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const usuariosController = require('../controllers/users_controller');
+const usersController = require('../controllers/users_controller');
 /* A rota de publicações do autor começa por /users, mas devolve publicações.
    O controlador é o de post: quem mantém as regras de publicação encontra
    tudo em um arquivo só. */
@@ -10,7 +10,7 @@ const postController = require('../controllers/post_controller');
    o perfil. As rotas ficam aqui apenas porque o caminho começa por /users. */
 const authController = require('../controllers/auth_controller');
 
-const uploadUnico = require('../middlewares/upload');
+const singleUpload = require('../middlewares/upload');
 
 /**
  * @swagger
@@ -46,35 +46,35 @@ const uploadUnico = require('../middlewares/upload');
  *             schema:
  *               type: object
  *               properties:
- *                 fotoUrl:
+ *                 photoUrl:
  *                   type: string
  *                   example: https://res.cloudinary.com/demo/image/upload/v1/blabry/perfis/uuid.jpg
  *       400:
  *         description: Nenhuma imagem enviada
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       413:
  *         description: Imagem acima do limite de 5 MB
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       415:
  *         description: Formato não suportado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       502:
  *         description: Falha no serviço de imagens
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  */
-router.post('/photo', uploadUnico('foto'), usuariosController.atualizarFoto);
+router.post('/photo', singleUpload('photo'), usersController.updatePhoto);
 
 /**
  * @swagger
@@ -100,7 +100,7 @@ router.post('/photo', uploadUnico('foto'), usuariosController.atualizarFoto);
  *             type: object
  *             minProperties: 1
  *             properties:
- *               nome:
+ *               name:
  *                 type: string
  *                 minLength: 2
  *                 maxLength: 100
@@ -114,16 +114,16 @@ router.post('/photo', uploadUnico('foto'), usuariosController.atualizarFoto);
  *                 type: string
  *                 format: email
  *                 description: Exige `senhaAtual` no mesmo corpo.
- *               nascimento:
+ *               birthDate:
  *                 type: string
  *                 format: date
  *                 description: Idade mínima de 13 anos.
  *                 example: '2004-01-20'
- *               nacionalidade:
+ *               nationality:
  *                 type: string
  *                 description: Código ISO alpha-3 existente em `GET /countries`.
  *                 example: BRA
- *               senhaAtual:
+ *               currentPassword:
  *                 type: string
  *                 format: password
  *                 description: Obrigatório apenas ao alterar o e-mail.
@@ -133,32 +133,32 @@ router.post('/photo', uploadUnico('foto'), usuariosController.atualizarFoto);
  *               value: { bio: 'Desenvolvedor Node.js no Recife.' }
  *             email:
  *               summary: Alterar o e-mail
- *               value: { email: 'novo@exemplo.com', senhaAtual: 'SenhaForte#1' }
+ *               value: { email: 'novo@exemplo.com', currentPassword: 'SenhaForte#1' }
  *     responses:
  *       200:
  *         description: Perfil atualizado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Perfil' }
+ *             schema: { $ref: '#/components/schemas/Profile' }
  *       400:
  *         description: Campo inválido ou nenhum campo editável informado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
  *         description: Token ausente, ou senha atual ausente/incorreta
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       409:
  *         description: E-mail já em uso por outra conta
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.patch('/me', usuariosController.atualizarPerfil);
+router.patch('/me', usersController.updateProfile);
 
 /**
  * @swagger
@@ -177,13 +177,13 @@ router.patch('/me', usuariosController.atualizarPerfil);
  *         description: Perfil do usuário
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Perfil' }
+ *             schema: { $ref: '#/components/schemas/Profile' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
 /**
  * @swagger
@@ -209,8 +209,8 @@ router.patch('/me', usuariosController.atualizarPerfil);
  *         schema: { type: string, minLength: 2 }
  *         description: Nome ou @ procurado. O caractere @ é opcional.
  *         example: abraao
- *       - $ref: '#/components/parameters/Pagina'
- *       - $ref: '#/components/parameters/Limite'
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
  *     responses:
  *       200:
  *         description: Página de usuários
@@ -220,28 +220,28 @@ router.patch('/me', usuariosController.atualizarPerfil);
  *               allOf:
  *                 - type: object
  *                   properties:
- *                     usuarios:
+ *                     users:
  *                       type: array
  *                       items:
  *                         type: object
  *                         properties:
- *                           nome: { type: string, example: 'Abraão Santos' }
+ *                           name: { type: string, example: 'Abraão Santos' }
  *                           alias: { type: string, example: 'abraaosantosdev' }
- *                           fotoUrl: { type: string, nullable: true }
+ *                           photoUrl: { type: string, nullable: true }
  *                           bio: { type: string, nullable: true }
- *                 - $ref: '#/components/schemas/Paginacao'
+ *                 - $ref: '#/components/schemas/Pagination'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.get('/', usuariosController.buscar);
+router.get('/', usersController.search);
 
-router.get('/me', usuariosController.meuPerfil);
+router.get('/me', usersController.myProfile);
 
 /**
  * @swagger
- * /users/me/exclusao/codigo:
+ * /users/me/deletion/code:
  *   post:
  *     tags: [Usuários]
  *     summary: Envia o código que autoriza excluir a conta
@@ -267,16 +267,16 @@ router.get('/me', usuariosController.meuPerfil);
  *                 ok: { type: boolean, example: true }
  *                 email: { type: string, example: 'a*****@gmail.com' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       429:
  *         description: Novo código pedido cedo demais
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/me/exclusao/codigo', authController.solicitarExclusao);
+router.post('/me/deletion/code', authController.requestAccountDeletion);
 
 /**
  * @swagger
@@ -314,7 +314,7 @@ router.post('/me/exclusao/codigo', authController.solicitarExclusao);
  *           schema:
  *             type: object
  *             properties:
- *               codigo: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
+ *               code: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
  *     responses:
  *       204:
  *         description: Conta excluída
@@ -322,15 +322,15 @@ router.post('/me/exclusao/codigo', authController.solicitarExclusao);
  *         description: Código inválido ou expirado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.delete('/me', authController.excluirConta);
+router.delete('/me', authController.deleteAccount);
 
 /**
  * @swagger
@@ -356,13 +356,13 @@ router.delete('/me', authController.excluirConta);
  *         description: Perfil encontrado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Perfil' }
+ *             schema: { $ref: '#/components/schemas/Profile' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
 /**
  * @swagger
@@ -388,16 +388,16 @@ router.delete('/me', authController.excluirConta);
  *         description: Estado do relacionamento
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Seguir' }
+ *             schema: { $ref: '#/components/schemas/Follow' }
  *       400:
  *         description: Tentativa de seguir a si mesmo
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *   delete:
  *     tags: [Usuários]
  *     summary: Deixa de seguir um usuário
@@ -412,14 +412,14 @@ router.delete('/me', authController.excluirConta);
  *         description: Estado do relacionamento
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Seguir' }
+ *             schema: { $ref: '#/components/schemas/Follow' }
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  */
-router.post('/:alias/follow', usuariosController.seguir);
-router.delete('/:alias/follow', usuariosController.deixarDeSeguir);
+router.post('/:alias/follow', usersController.follow);
+router.delete('/:alias/follow', usersController.unfollow);
 
 /**
  * @swagger
@@ -444,8 +444,8 @@ router.delete('/:alias/follow', usuariosController.deixarDeSeguir);
  *         schema: { type: string }
  *         description: O @ do usuário, com ou sem a arroba.
  *         example: abraao
- *       - $ref: '#/components/parameters/Pagina'
- *       - $ref: '#/components/parameters/Limite'
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
  *     responses:
  *       200:
  *         description: Página de publicações do autor
@@ -458,16 +458,16 @@ router.delete('/:alias/follow', usuariosController.deixarDeSeguir);
  *                     posts:
  *                       type: array
  *                       items: { $ref: '#/components/schemas/Post' }
- *                 - $ref: '#/components/schemas/Paginacao'
+ *                 - $ref: '#/components/schemas/Pagination'
  *       401:
- *         $ref: '#/components/responses/NaoAutorizado'
+ *         $ref: '#/components/responses/Unauthorized'
  *       404:
- *         $ref: '#/components/responses/NaoEncontrado'
+ *         $ref: '#/components/responses/NotFound'
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.get('/:alias/posts', postController.listarDoAutor);
+router.get('/:alias/posts', postController.listByAuthor);
 
-router.get('/:alias', usuariosController.perfilPorAlias);
+router.get('/:alias', usersController.profileByAlias);
 
 module.exports = router;

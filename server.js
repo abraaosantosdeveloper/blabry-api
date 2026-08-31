@@ -40,8 +40,8 @@ app.use('/auth', require('./routes/auth_routes'));
 app.use('/countries', require('./routes/countries_routes'));
 
 // Middleware de autenticação JWT
-const autenticar = require('./middlewares/authentication');
-app.use(autenticar);
+const authenticate = require('./middlewares/authentication');
+app.use(authenticate);
 app.use('/users', require('./routes/users_routes'));
 app.use('/posts', require('./routes/post_routes'));
 
@@ -53,11 +53,11 @@ app.use((err, req, res, next) => {
   // Só falha real merece stack trace no log.
   if (status >= 500) console.error(err);
 
-  const mensagem = process.env.NODE_ENV === 'production'
+  const message = process.env.NODE_ENV === 'production'
     ? 'Erro interno do servidor'
     : err.message;
 
-  res.status(status).json({ erro: mensagem });
+  res.status(status).json({ error: message });
 });
 
 if (require.main === module) {

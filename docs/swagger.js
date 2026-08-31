@@ -36,39 +36,39 @@ const options = {
             name: { type: 'string', example: 'Brasil' },
           },
         },
-        UsuarioPublico: {
+        PublicUser: {
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid', example: '01927d4e-8f3a-7c21-9b44-2f8a1c6d5e90' },
-            nome: { type: 'string', example: 'Abraão Santos' },
-            apelido: { type: 'string', example: 'abraao_dev' },
+            name: { type: 'string', example: 'Abraão Santos' },
+            alias: { type: 'string', example: 'abraao_dev' },
             email: { type: 'string', format: 'email', example: 'abraao@exemplo.com' },
-            fotoUrl: { type: 'string', nullable: true, example: null },
+            photoUrl: { type: 'string', nullable: true, example: null },
           },
         },
-        RespostaAutenticacao: {
+        AuthResponse: {
           type: 'object',
           properties: {
             token: { type: 'string', description: 'JWT válido por 24h' },
-            usuario: { $ref: '#/components/schemas/UsuarioPublico' },
+            user: { $ref: '#/components/schemas/PublicUser' },
           },
         },
-        Autor: {
+        Author: {
           type: 'object',
           description: 'Identificação resumida de quem publicou.',
           properties: {
-            nome: { type: 'string', example: 'Abraão Santos' },
+            name: { type: 'string', example: 'Abraão Santos' },
             alias: { type: 'string', example: 'abraao_dev' },
-            fotoUrl: { type: 'string', nullable: true, example: null },
+            photoUrl: { type: 'string', nullable: true, example: null },
           },
         },
         Post: {
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid' },
-            texto: { type: 'string', maxLength: 280, example: 'Primeiro blab!' },
-            criadoEm: { type: 'string', format: 'date-time' },
-            editadoEm: {
+            text: { type: 'string', maxLength: 280, example: 'Primeiro blab!' },
+            createdAt: { type: 'string', format: 'date-time' },
+            editedAt: {
               type: 'string',
               format: 'date-time',
               nullable: true,
@@ -76,19 +76,19 @@ const options = {
                 'Preenchido quando o autor editou a publicação dentro da janela ' +
                 'de 15 minutos. A interface a marca como editada.',
             },
-            autor: { $ref: '#/components/schemas/Autor' },
-            curtidas: { type: 'integer', description: 'COUNT em like_post', example: 12 },
-            comentarios: { type: 'integer', description: 'COUNT em comment', example: 3 },
-            curtido: { type: 'boolean', description: 'Se o usuário do token curtiu', example: false },
+            author: { $ref: '#/components/schemas/Author' },
+            likes: { type: 'integer', description: 'COUNT em like_post', example: 12 },
+            comments: { type: 'integer', description: 'COUNT em comment', example: 3 },
+            liked: { type: 'boolean', description: 'Se o usuário do token curtiu', example: false },
           },
         },
-        Comentario: {
+        Comment: {
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid' },
-            texto: { type: 'string', maxLength: 280 },
-            criadoEm: { type: 'string', format: 'date-time' },
-            editadoEm: {
+            text: { type: 'string', maxLength: 280 },
+            createdAt: { type: 'string', format: 'date-time' },
+            editedAt: {
               type: 'string',
               format: 'date-time',
               nullable: true,
@@ -96,27 +96,27 @@ const options = {
                 'Preenchido quando o autor editou o comentário dentro da janela ' +
                 'de 15 minutos. A interface marca o comentário como editado.',
             },
-            autor: { $ref: '#/components/schemas/Autor' },
+            author: { $ref: '#/components/schemas/Author' },
           },
         },
-        Curtida: {
+        Like: {
           type: 'object',
           description: 'Estado da curtida depois da operação, recontado no banco.',
           properties: {
-            curtidas: { type: 'integer', example: 13 },
-            curtido: { type: 'boolean', example: true },
+            likes: { type: 'integer', example: 13 },
+            liked: { type: 'boolean', example: true },
           },
         },
-        Perfil: {
+        Profile: {
           type: 'object',
           description:
             'Perfil de usuário. `email`, `nascimento` e `nacionalidade` são dados ' +
             'pessoais e só vêm preenchidos em /users/me; no perfil público vêm como ' +
             'null. Os demais campos formam a apresentação e são sempre visíveis.',
           properties: {
-            nome: { type: 'string', example: 'John Doe' },
+            name: { type: 'string', example: 'John Doe' },
             alias: { type: 'string', example: 'John.Doe2026' },
-            fotoUrl: { type: 'string', nullable: true },
+            photoUrl: { type: 'string', nullable: true },
             bio: { type: 'string', nullable: true, maxLength: 280 },
             email: {
               type: 'string',
@@ -124,22 +124,22 @@ const options = {
               nullable: true,
               description: 'Apenas no próprio perfil; null no perfil público.',
             },
-            nascimento: { type: 'string', format: 'date', nullable: true, description: 'Apenas no próprio perfil.' },
-            nacionalidade: {
+            birthDate: { type: 'string', format: 'date', nullable: true, description: 'Apenas no próprio perfil.' },
+            nationality: {
               type: 'string',
               nullable: true,
               example: 'BRA',
               description: 'Apenas no próprio perfil.',
             },
-            seguindo: { type: 'integer', example: 159 },
-            seguidores: { type: 'integer', example: 2500 },
-            desde: { type: 'integer', example: 2026 },
-            seguindoEste: {
+            following: { type: 'integer', example: 159 },
+            followers: { type: 'integer', example: 2500 },
+            memberSince: { type: 'integer', example: 2026 },
+            isFollowing: {
               type: 'boolean',
               nullable: true,
               description: 'Se o usuário do token segue este perfil. Null no próprio perfil.',
             },
-            teSegue: {
+            followsYou: {
               type: 'boolean',
               nullable: true,
               description:
@@ -148,39 +148,39 @@ const options = {
             },
           },
         },
-        Seguir: {
+        Follow: {
           type: 'object',
           properties: {
-            seguindo: { type: 'boolean', example: true },
-            seguidores: { type: 'integer', example: 2501 },
+            following: { type: 'boolean', example: true },
+            followers: { type: 'integer', example: 2501 },
           },
         },
-        Paginacao: {
+        Pagination: {
           type: 'object',
           description:
             'Campos de paginação presentes em toda listagem. O cliente usa `totalPaginas` ' +
             'para habilitar os controles de navegação.',
           properties: {
-            pagina: { type: 'integer', minimum: 1, example: 1 },
-            totalPaginas: { type: 'integer', example: 4 },
+            page: { type: 'integer', minimum: 1, example: 1 },
+            totalPages: { type: 'integer', example: 4 },
             total: { type: 'integer', description: 'Total de registros', example: 37 },
           },
         },
-        Erro: {
+        Error: {
           type: 'object',
           properties: {
-            erro: { type: 'string', example: 'Credenciais inválidas' },
+            error: { type: 'string', example: 'Credenciais inválidas' },
           },
         },
       },
       parameters: {
-        Pagina: {
+        PageParam: {
           name: 'pagina',
           in: 'query',
           schema: { type: 'integer', minimum: 1, default: 1 },
           description: 'Página desejada, começando em 1.',
         },
-        Limite: {
+        LimitParam: {
           name: 'limite',
           in: 'query',
           schema: { type: 'integer', minimum: 1, maximum: 50, default: 10 },
@@ -188,17 +188,17 @@ const options = {
         },
       },
       responses: {
-        NaoAutorizado: {
+        Unauthorized: {
           description: 'Token ausente ou inválido',
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/Erro' } } },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
         },
-        NaoEncontrado: {
+        NotFound: {
           description: 'Recurso não encontrado',
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/Erro' } } },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
         },
-        ErroInterno: {
+        InternalError: {
           description: 'Erro interno do servidor',
-          content: { 'application/json': { schema: { $ref: '#/components/schemas/Erro' } } },
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
         },
       },
     },

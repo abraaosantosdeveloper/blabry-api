@@ -1,18 +1,18 @@
 const jwt = require('jsonwebtoken');
 
-function autenticar(req, res, next) {
+function authenticate(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token)
-    return res.status(401).json({ erro: 'Não autorizado' });
+    return res.status(401).json({ error: 'Não autorizado' });
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = payload.id;
-    req.nomeUsuario = payload.nome;
+    req.userName = payload.name;
     next();
   } catch {
-    res.status(401).json({ erro: 'Token inválido' });
+    res.status(401).json({ error: 'Token inválido' });
   }
 }
 
-module.exports = autenticar;
+module.exports = authenticate;

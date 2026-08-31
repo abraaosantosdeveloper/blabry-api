@@ -3,7 +3,7 @@ const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
 const AuthRepository = require('../repositories/auth_repository');
 const User = require('../models/user');
-const { solicitarCodigo, confirmarCodigo, PROPOSITOS } = require('./verification_service');
+const { requestCode, confirmCode, PURPOSES } = require('./verification_service');
 
 const authRepository = new AuthRepository(pool);
 
@@ -11,23 +11,23 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /* Mesma regra de força de senha usada pela interface no cadastro: no mínimo
    8 caracteres, uma maiúscula e um caractere não alfanumérico. Repetida aqui
-   porque a troca de senha por código não passa pelo formulário de cadastro. */
-const SENHA_RE = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+   porque a troca de password por código não passa pelo formulário de cadastro. */
+const PASSWORD_RE = /^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
 
-const erro = (mensagem, status) =>
-  Object.assign(new Error(mensagem), { status });
+const fail = (message, status) =>
+  Object.assign(new Error(message), { status });
 
-function gerarToken(usuario) {
+function generateToken(user) {
   return jwt.sign(
-    { id: usuario.id, nome: usuario.nome },
+    { id: user.id, name: user..name },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
   );
 }
 
-async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacionalidade, aceitouPolitica }) {
-  if (!nome || !apelido || !email || !senha || !nascimento || !nacionalidade)
-    throw erro('Campos obrigatórios ausentes', 400);
+async function signUp({ name, alias, email, password, birthDate, nationality, acceptedPolicy }) {
+  if (!name || !alias || !email || !password || !birthDate || !nationality)
+    throw fail('Campos obrigatórios ausentes', 400);
 
   /* O aceite da política é barrado na interface, mas a validação existe aqui
      porque a interface é conveniência e a API é a fronteira real: qualquer
@@ -36,26 +36,26 @@ async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacio
      A comparação é estrita com `true`. Sem isso, a string "false" — que é o
      que chega quando um formulário serializa um booleano sem cuidado — seria
      considerada verdadeira, porque toda string não vazia é. */
-  if (aceitouPolitica !== true)
-    throw erro('É necessário aceitar a política de privacidade', 400);
+  if (acceptedPolicy !== true)
+    throw fail('É necessário aceitar a política de privacidade', 400);
 
-  if (await authRepository.buscarPorEmail(email))
-    throw erro('Credenciais inválidas', 409);
+  if (await authRepository.findByEmail(email))
+    throw fail('Credenciais inválidas', 409);
 
-  if (await authRepository.buscarPorApelido(apelido))
-    throw erro('Este @ já está em uso', 409);
+  if (await authRepository.findByAlias(alias))
+    throw fail('Este @ já está em uso', 409);
 
-  const usuario = new User({
+  const user = new User({
     id: uuidv7(),
-    nome,
-    apelido,
+    name,
+    alias,
     email,
-    senhaHash: await User.gerarHash(senha),
-    nacionalidade,
-    nascimento,
+    passwordHash: await User.hashPassword(password),
+    nationality,
+    birthDate,
   });
 
-  await authRepository.criar(usuario);
+  await authRepository.create(user);
 
   /* A conta nasce sem e-mail confirmado e, por isso, sem token: o login
      fica bloqueado até a confirmação. É o que impede que qualquer endereço
@@ -66,13 +66,13 @@ async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacio
      código na tela seguinte. Falhar aqui apagaria um cadastro válido por
      causa de um problema que não é dele. */
   try {
-    await solicitarCodigo({ usuario, proposito: PROPOSITOS.CADASTRO });
-  } catch (falha) {
+    await requestCode({ user, purpose: PURPOSES.SIGNUP });
+  } catch (failure) {
     // eslint-disable-next-line no-console
-    console.error('Falha ao enviar código de cadastro:', falha.message);
+    console.error('Falha ao enviar código de cadastro:', failure.message);
   }
 
-  return { usuario, verificacaoPendente: true };
+  return { user, verificationPending: true };
 }
 
 /**
@@ -84,13 +84,13 @@ async function cadastrarUsuario({ nome, apelido, email, senha, nascimento, nacio
  * distribuir. Quem tem a conta recebe o código; quem não tem, não recebe
  * nada e também não descobre nada.
  */
-async function reenviarCodigoCadastro({ email }) {
-  if (!email) throw erro('Informe o e-mail', 400);
+async function resendSignupCode({ email }) {
+  if (!email) throw fail('Informe o e-mail', 400);
 
-  const usuario = await authRepository.buscarPorEmail(String(email).trim());
+  const user = await authRepository.findByEmail(String(email).trim());
 
-  if (usuario && !usuario.emailVerificado) {
-    await solicitarCodigo({ usuario, proposito: PROPOSITOS.CADASTRO });
+  if (user && !user.emailVerified) {
+    await requestCode({ user, purpose: PURPOSES.SIGNUP });
   }
 
   return { ok: true };
@@ -103,27 +103,27 @@ async function reenviarCodigoCadastro({ email }) {
  * que o usuário faça login logo depois de digitar um código seria um
  * obstáculo sem função de segurança — ele acabou de provar que tem o e-mail.
  */
-async function confirmarEmail({ email, codigo }) {
-  if (!email || !codigo) throw erro('Campos obrigatórios ausentes', 400);
+async function confirmEmail({ email, code }) {
+  if (!email || !code) throw fail('Campos obrigatórios ausentes', 400);
 
-  const usuario = await authRepository.buscarPorEmail(String(email).trim());
+  const user = await authRepository.findByEmail(String(email).trim());
 
   /* Mensagem única para "não existe" e "código errado": distinguir os dois
      revelaria quais e-mails têm conta. */
-  if (!usuario) throw erro('Código inválido ou expirado. Solicite um novo.', 400);
+  if (!user) throw fail('Código inválido ou expirado. Solicite um novo.', 400);
 
-  if (usuario.emailVerificado)
-    return { token: gerarToken(usuario), usuario };
+  if (user.emailVerified)
+    return { token: generateToken(user), user };
 
-  await confirmarCodigo({
-    usuarioId: usuario.id,
-    proposito: PROPOSITOS.CADASTRO,
-    codigo,
+  await confirmCode({
+    userId: user.id,
+    purpose: PURPOSES.SIGNUP,
+    code,
   });
 
-  await authRepository.confirmarEmail(usuario.id);
+  await authRepository.confirmEmail(user.id);
 
-  return { token: gerarToken(usuario), usuario };
+  return { token: generateToken(user), user };
 }
 
 /**
@@ -132,13 +132,13 @@ async function confirmarEmail({ email, codigo }) {
  * Mesma resposta para e-mail existente ou não, pelo mesmo motivo do reenvio
  * de cadastro.
  */
-async function solicitarTrocaDeSenha({ email }) {
-  if (!email) throw erro('Informe o e-mail', 400);
+async function requestPasswordReset({ email }) {
+  if (!email) throw fail('Informe o e-mail', 400);
 
-  const usuario = await authRepository.buscarPorEmail(String(email).trim());
+  const user = await authRepository.findByEmail(String(email).trim());
 
-  if (usuario) {
-    await solicitarCodigo({ usuario, proposito: PROPOSITOS.SENHA });
+  if (user) {
+    await requestCode({ user, purpose: PURPOSES.PASSWORD_RESET });
   }
 
   return { ok: true };
@@ -150,29 +150,29 @@ async function solicitarTrocaDeSenha({ email }) {
  * A nova senha passa pela mesma regra de força do cadastro, validada aqui e
  * não só na interface: a API é a fronteira real.
  */
-async function trocarSenha({ email, codigo, novaSenha }) {
-  if (!email || !codigo || !novaSenha)
-    throw erro('Campos obrigatórios ausentes', 400);
+async function resetPassword({ email, code, newPassword }) {
+  if (!email || !code || !newPassword)
+    throw fail('Campos obrigatórios ausentes', 400);
 
-  if (!SENHA_RE.test(novaSenha))
-    throw erro('A senha precisa de 8 caracteres, uma letra maiúscula e um caractere especial', 400);
+  if (!PASSWORD_RE.test(newPassword))
+    throw fail('A senha precisa de 8 caracteres, uma letra maiúscula e um caractere especial', 400);
 
-  const usuario = await authRepository.buscarPorEmail(String(email).trim());
+  const user = await authRepository.findByEmail(String(email).trim());
 
-  if (!usuario) throw erro('Código inválido ou expirado. Solicite um novo.', 400);
+  if (!user) throw fail('Código inválido ou expirado. Solicite um novo.', 400);
 
-  await confirmarCodigo({
-    usuarioId: usuario.id,
-    proposito: PROPOSITOS.SENHA,
-    codigo,
+  await confirmCode({
+    userId: user.id,
+    purpose: PURPOSES.PASSWORD_RESET,
+    code,
   });
 
-  await authRepository.atualizarSenha(usuario.id, await User.gerarHash(novaSenha));
+  await authRepository.updatePassword(user.id, await User.hashPassword(newPassword));
 
   /* Trocar a senha também confirma o e-mail: o usuário acabou de provar que
      tem acesso a ele. Prender uma conta em "não confirmada" depois disso
      seria pedir a mesma prova duas vezes. */
-  await authRepository.confirmarEmail(usuario.id);
+  await authRepository.confirmEmail(user.id);
 
   return { ok: true };
 }
@@ -183,18 +183,18 @@ async function trocarSenha({ email, codigo, novaSenha }) {
  * Diferente dos anteriores, este exige token: excluir é ação do dono da
  * sessão, não de quem conhece um endereço de e-mail.
  */
-async function solicitarExclusao(usuarioId) {
-  const usuario = await authRepository.buscarPorId(usuarioId);
+async function requestAccountDeletion(userId) {
+  const user = await authRepository.findById(userId);
 
-  if (!usuario) throw erro('Usuário não encontrado', 404);
+  if (!user) throw fail('Usuário não encontrado', 404);
 
-  await solicitarCodigo({ usuario, proposito: PROPOSITOS.EXCLUSAO });
+  await requestCode({ user, purpose: PURPOSES.ACCOUNT_DELETION });
 
   /* O e-mail é devolvido mascarado para a interface poder dizer "enviamos
      para a***@gmail.com" — confirma ao usuário para onde o código foi sem
      escrever o endereço inteiro em uma tela que pode estar sendo vista por
      outra pessoa. */
-  return { ok: true, email: mascararEmail(usuario.email) };
+  return { ok: true, email: maskEmail(user.email) };
 }
 
 /**
@@ -204,18 +204,18 @@ async function solicitarExclusao(usuarioId) {
  * ao e-mail (o dono está de fato ali, e não alguém em um computador deixado
  * aberto). Para uma ação irreversível, uma prova só é pouco.
  */
-async function excluirConta({ usuarioId, codigo }) {
-  const usuario = await authRepository.buscarPorId(usuarioId);
+async function deleteAccount({ userId, code }) {
+  const user = await authRepository.findById(userId);
 
-  if (!usuario) throw erro('Usuário não encontrado', 404);
+  if (!user) throw fail('Usuário não encontrado', 404);
 
-  await confirmarCodigo({
-    usuarioId,
-    proposito: PROPOSITOS.EXCLUSAO,
-    codigo,
+  await confirmCode({
+    userId,
+    purpose: PURPOSES.ACCOUNT_DELETION,
+    code,
   });
 
-  await authRepository.excluirConta(usuarioId);
+  await authRepository.deleteAccount(userId);
 
   return { ok: true };
 }
@@ -224,26 +224,26 @@ async function excluirConta({ usuarioId, codigo }) {
  * Esconde o miolo do e-mail, preservando o primeiro caractere e o domínio.
  * "abraao@gmail.com" → "a*****@gmail.com"
  */
-function mascararEmail(email) {
-  const [usuario, dominio] = String(email ?? '').split('@');
-  if (!dominio) return '';
-  return `${usuario.slice(0, 1)}${'*'.repeat(Math.max(1, usuario.length - 1))}@${dominio}`;
+function maskEmail(email) {
+  const [user, domain] = String(email ?? '').split('@');
+  if (!domain) return '';
+  return `${user.slice(0, 1)}${'*'.repeat(Math.max(1, user.length - 1))}@${domain}`;
 }
 
-async function login({ email, senha }) {
-  if (!email || !senha)
-    throw erro('Campos obrigatórios ausentes', 400);
+async function login({ email, password }) {
+  if (!email || !password)
+    throw fail('Campos obrigatórios ausentes', 400);
 
   // Aceita email ou @alias no mesmo campo.
-  const identificador = String(email).trim();
-  const usuario = EMAIL_RE.test(identificador)
-    ? await authRepository.buscarPorEmail(identificador)
-    : await authRepository.buscarPorApelido(identificador.replace(/^@/, ''));
+  const identifier = String(email).trim();
+  const user = EMAIL_RE.test(identifier)
+    ? await authRepository.findByEmail(identifier)
+    : await authRepository.findByAlias(identifier.replace(/^@/, ''));
 
-  const senhaValida = usuario && await usuario.verificarSenha(senha);
+  const passwordValid = user && await user.verifyPassword(password);
 
-  if (!usuario || !senhaValida)
-    throw erro('Credenciais inválidas', 401);
+  if (!user || !passwordValid)
+    throw fail('Credenciais inválidas', 401);
 
   /* Conta não confirmada não entra. A checagem vem DEPOIS da senha, e não
      antes: se viesse antes, bastaria digitar um e-mail qualquer para
@@ -253,20 +253,20 @@ async function login({ email, senha }) {
      O status 403 (e não 401) distingue "não sabemos quem é você" de "sabemos
      quem é você, mas falta um passo" — é o que permite à interface levar o
      usuário à tela de código em vez de dizer "senha errada". */
-  if (!usuario.emailVerificado)
-    throw erro('Confirme seu e-mail para entrar', 403);
+  if (!user.emailVerified)
+    throw fail('Confirme seu e-mail para entrar', 403);
 
-  return { token: gerarToken(usuario), usuario };
+  return { token: generateToken(user), user };
 }
 
 module.exports = {
-  cadastrarUsuario,
+  signUp,
   login,
-  reenviarCodigoCadastro,
-  confirmarEmail,
-  solicitarTrocaDeSenha,
-  trocarSenha,
-  solicitarExclusao,
-  excluirConta,
-  mascararEmail,
+  resendSignupCode,
+  confirmEmail,
+  requestPasswordReset,
+  resetPassword,
+  requestAccountDeletion,
+  deleteAccount,
+  maskEmail,
 };

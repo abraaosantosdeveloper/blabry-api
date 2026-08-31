@@ -3,64 +3,64 @@ const pool = require('../database');
 const CommentRepository = require('../repositories/comment_repository');
 const PostRepository = require('../repositories/post_repository');
 const Comment = require('../models/comment');
-const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/edit_window');
+const { WINDOW_MINUTES, withinWindow } = require('../utils/edit_window');
 
 const commentRepository = new CommentRepository(pool);
 const postRepository = new PostRepository(pool);
 
-const erro = (mensagem, status) =>
-  Object.assign(new Error(mensagem), { status });
+const fail = (message, status) =>
+  Object.assign(new Error(message), { status });
 
-const TEXTO_MAX = 280;
-const LIMITE_PADRAO = 10;
-const LIMITE_MAXIMO = 50;
+const MAX_TEXT = 280;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 50;
 
-function inteiroNaFaixa(valor, { padrao, minimo, maximo }) {
-  const numero = Number.parseInt(valor, 10);
-  if (!Number.isInteger(numero)) return padrao;
-  return Math.min(Math.max(numero, minimo), maximo);
+function intInRange(value, { fallback, min, max }) {
+  const number = Number.parseInt(value, 10);
+  if (!Number.isInteger(number)) return fallback;
+  return Math.min(Math.max(number, min), max);
 }
 
-async function listar(postId, { pagina, limite } = {}) {
-  if (!(await postRepository.existe(postId)))
-    throw erro('Publicação não encontrada', 404);
+async function list(postId, { page, limit } = {}) {
+  if (!(await postRepository.exists(postId)))
+    throw fail('Publicação não encontrada', 404);
 
-  const paginaAtual = inteiroNaFaixa(pagina, { padrao: 1, minimo: 1, maximo: Number.MAX_SAFE_INTEGER });
-  const porPagina = inteiroNaFaixa(limite, { padrao: LIMITE_PADRAO, minimo: 1, maximo: LIMITE_MAXIMO });
+  const currentPage = intInRange(page, { fallback: 1, min: 1, max: Number.MAX_SAFE_INTEGER });
+  const perPage = intInRange(limit, { fallback: DEFAULT_LIMIT, min: 1, max: MAX_LIMIT });
 
-  const { comentarios, total } = await commentRepository.listarPorPost(postId, {
-    limite: porPagina,
-    offset: (paginaAtual - 1) * porPagina,
+  const { comments, total } = await commentRepository.listByPost(postId, {
+    limit: perPage,
+    offset: (currentPage - 1) * perPage,
   });
 
   return {
-    comentarios,
-    pagina: paginaAtual,
-    totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
+    comments,
+    page: currentPage,
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
     total,
   };
 }
 
-async function criar(postId, usuarioId, texto) {
-  const conteudo = String(texto ?? '').trim();
+async function create(postId, userId, text) {
+  const content = String(text ?? '').trim();
 
-  if (!conteudo)
-    throw erro('O comentário não pode estar vazio', 400);
+  if (!content)
+    throw fail('O comentário não pode estar vazio', 400);
 
-  if (conteudo.length > TEXTO_MAX)
-    throw erro(`O comentário deve ter no máximo ${TEXTO_MAX} caracteres`, 400);
+  if (content.length > MAX_TEXT)
+    throw fail(`O comentário deve ter no máximo ${MAX_TEXT} caracteres`, 400);
 
-  if (!(await postRepository.existe(postId)))
-    throw erro('Publicação não encontrada', 404);
+  if (!(await postRepository.exists(postId)))
+    throw fail('Publicação não encontrada', 404);
 
-  const comentario = new Comment({
+  const comment = new Comment({
     id: uuidv7(),
-    texto: conteudo,
+    text: content,
     postId,
-    autorId: usuarioId,
+    authorId: userId,
   });
 
-  return commentRepository.criar(comentario);
+  return commentRepository.create(comment);
 }
 /**
  * Edita um comentário do próprio autor, dentro da janela de tempo.
@@ -70,45 +70,45 @@ async function criar(postId, usuarioId, texto) {
  * e só então a janela — informar "prazo esgotado" a quem nem é o autor
  * revelaria que o comentário existe.
  */
-async function editar(id, usuarioId, texto) {
-  const conteudo = String(texto ?? '').trim();
+async function edit(id, userId, text) {
+  const content = String(text ?? '').trim();
 
-  if (!conteudo)
-    throw erro('O comentário não pode estar vazio', 400);
+  if (!content)
+    throw fail('O comentário não pode estar vazio', 400);
 
-  if (conteudo.length > TEXTO_MAX)
-    throw erro(`O comentário deve ter no máximo ${TEXTO_MAX} caracteres`, 400);
+  if (content.length > MAX_TEXT)
+    throw fail(`O comentário deve ter no máximo ${MAX_TEXT} caracteres`, 400);
 
-  const comentario = await commentRepository.buscarPorId(id);
+  const comment = await commentRepository.findById(id);
 
-  if (!comentario)
-    throw erro('Comentário não encontrado', 404);
+  if (!comment)
+    throw fail('Comentário não encontrado', 404);
 
-  if (!comentario.pertenceA(usuarioId))
-    throw erro('Você só pode editar seus próprios comentários', 403);
+  if (!comment.belongsTo(userId))
+    throw fail('Você só pode edit seus próprios comentários', 403);
 
-  if (!dentroDaJanela(comentario.criadoEm))
-    throw erro(`A edição só é possível nos primeiros ${JANELA_MINUTOS} minutos`, 409);
+  if (!withinWindow(comment..createdAt))
+    throw fail(`A edição só é possível nos primeiros ${WINDOW_MINUTES} minutos`, 409);
 
-  if (conteudo === comentario.texto)
-    return comentario;   // nada mudou: não marca como editado
+  if (content === comment..text)
+    return comment;   // nada mudou: não marca como editado
 
-  await commentRepository.atualizar(id, usuarioId, conteudo);
-  return commentRepository.buscarPorId(id);
+  await commentRepository.update(id, userId, content);
+  return commentRepository.findById(id);
 }
 
-async function excluir(id, usuarioId) {
-  const removidos = await commentRepository.excluir(id, usuarioId);
-  if (removidos) return;
+async function remove(id, userId) {
+  const removed = await commentRepository.remove(id, userId);
+  if (removed) return;
 
-  const comentario = await commentRepository.buscarPorId(id);
+  const comment = await commentRepository.findById(id);
 
-  if (!comentario) throw erro('Comentário não encontrado', 404);
-  if (!comentario.pertenceA(usuarioId)) throw erro('Você só pode excluir seus próprios comentários', 403);
+  if (!comment) throw fail('Comentário não encontrado', 404);
+  if (!comment.belongsTo(userId)) throw fail('Você só pode remove seus próprios comentários', 403);
 
-  throw erro('Não foi possível excluir o comentário', 500);
+  throw fail('Não foi possível remove o comentário', 500);
 }
 
 
 
-module.exports = { listar, criar, editar, excluir };
+module.exports = { list, create, edit, remove };

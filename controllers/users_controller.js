@@ -1,37 +1,37 @@
-const usuariosService = require('../services/users_service');
-const fotoService = require('../services/photo_service');
+const usersService = require('../services/users_service');
+const photoService = require('../services/photo_service');
 
-async function atualizarFoto(req, res, next) {
+async function updatePhoto(req, res, next) {
   try {
-    const resultado = await fotoService.atualizarFotoDePerfil(req.userId, req.file);
-    res.status(200).json(resultado);
+    const result = await photoService.updateProfilePhoto(req.userId, req.file);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }
 }
 
-async function meuPerfil(req, res, next) {
+async function myProfile(req, res, next) {
   try {
-    const perfil = await usuariosService.meuPerfil(req.userId);
-    res.status(200).json(perfil);
+    const profile = await usersService.meuPerfil(req.userId);
+    res.status(200).json(profile);
   } catch (err) {
     next(err);
   }
 }
 
-async function perfilPorAlias(req, res, next) {
+async function profileByAlias(req, res, next) {
   try {
-    const perfil = await usuariosService.perfilPorAlias(req.params.alias, req.userId);
-    res.status(200).json(perfil);
+    const profile = await usersService.perfilPorAlias(req.params.alias, req.userId);
+    res.status(200).json(profile);
   } catch (err) {
     next(err);
   }
 }
 
-async function atualizarPerfil(req, res, next) {
+async function updateProfile(req, res, next) {
   try {
-    const perfil = await usuariosService.atualizarPerfil(req.userId, req.body);
-    res.status(200).json(perfil);
+    const profile = await usersService.atualizarPerfil(req.userId, req.body);
+    res.status(200).json(profile);
   } catch (err) {
     next(err);
   }
@@ -39,7 +39,7 @@ async function atualizarPerfil(req, res, next) {
 
 
 /**
- * GET /users?q=&pagina=&limite=
+ * GET /users?q=&page=&limit=
  *
  * Busca usuários por nome ou @.
  *
@@ -48,22 +48,22 @@ async function atualizarPerfil(req, res, next) {
  * negócio, e duplicar essa decisão aqui criaria dois lugares para ela
  * divergir com o tempo.
  */
-async function buscar(req, res, next) {
+async function search(req, res, next) {
     try {
         // req.query traz os parâmetros da URL, todos como texto.
-        const { q, pagina, limite } = req.query;
+        const { q, page, limit } = req.query;
 
-        const resultado = await usuariosService.buscar({
+        const result = await usersService.buscar({
             // req.userId vem do middleware de autenticação, que o extraiu do
             // token. Nunca do corpo nem da URL: a identidade não é algo que o
             // cliente possa afirmar.
-            usuarioId: req.userId,
+            userId: req.userId,
             q,
-            pagina,
-            limite,
+            page,
+            limit,
         });
 
-        res.status(200).json(resultado);
+        res.status(200).json(result);
     } catch (err) {
         // Qualquer erro segue para o middleware central, que decide o status
         // e a mensagem. O controller não trata erro localmente.
@@ -73,34 +73,34 @@ async function buscar(req, res, next) {
 
 
 /**
- * POST /users/:alias/follow — passa a seguir o usuário.
+ * POST /users/:alias/follow — passa a follow o usuário.
  *
  * Quem segue vem do token (req.userId); quem é seguido vem da URL. A
  * assimetria é a regra de sempre: a identidade não é algo que o cliente
  * possa afirmar, o alvo da ação é.
  */
-async function seguir(req, res, next) {
+async function follow(req, res, next) {
     try {
-        const resultado = await usuariosService.alternarSeguir(req.params.alias, req.userId, true);
-        res.status(200).json(resultado);
+        const result = await usersService.toggleFollow(req.params.alias, req.userId, true);
+        res.status(200).json(result);
     } catch (err) {
         next(err);
     }
 }
 
 /**
- * DELETE /users/:alias/follow — deixa de seguir.
+ * DELETE /users/:alias/follow — deixa de follow.
  *
  * Idêntica à anterior exceto pelo último argumento. A regra é a mesma; o
  * que muda é a intenção, e quem expressa intenção é o verbo HTTP.
  */
-async function deixarDeSeguir(req, res, next) {
+async function unfollow(req, res, next) {
     try {
-        const resultado = await usuariosService.alternarSeguir(req.params.alias, req.userId, false);
-        res.status(200).json(resultado);
+        const result = await usersService.toggleFollow(req.params.alias, req.userId, false);
+        res.status(200).json(result);
     } catch (err) {
         next(err);
     }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil, buscar, seguir, deixarDeSeguir };
+module.exports = { myProfile, profileByAlias, updatePhoto, updateProfile, search, follow, unfollow };

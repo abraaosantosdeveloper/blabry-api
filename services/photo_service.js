@@ -1,24 +1,24 @@
 const cloudinary = require('../config/cloudinary');
 const pool = require('../database');
-const UsuariosRepository = require('../repositories/users_repository');
+const UsersRepository = require('../repositories/users_repository');
 
-const usuariosRepository = new UsuariosRepository(pool);
+const usersRepository = new UsersRepository(pool);
 
-const erro = (mensagem, status) =>
-  Object.assign(new Error(mensagem), { status });
+const fail = (message, status) =>
+  Object.assign(new Error(message), { status });
 
-const PASTA = process.env.CLOUDINARY_FOLDER || 'blabry/perfis';
+const FOLDER = process.env.CLOUDINARY_FOLDER || 'blabry/perfis';
 
 /**
  * Envia um buffer ao Cloudinary.
  * O upload_stream é baseado em callback: é preciso envolvê-lo em uma Promise
  * e escrever o buffer no stream, senão nada é transmitido.
  */
-function enviarImagem(buffer, publicId) {
+function uploadImage(buffer, publicId) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        folder: PASTA,
+        folder: FOLDER,
         public_id: publicId,
         overwrite: true,
         invalidate: true,
@@ -28,7 +28,7 @@ function enviarImagem(buffer, publicId) {
           { quality: 'auto', fetch_format: 'auto' },
         ],
       },
-      (err, resultado) => (err ? reject(err) : resolve(resultado))
+      (err, result) => (err ? reject(err) : resolve(result))
     );
 
     stream.end(buffer);   // sem esta linha, a Promise nunca resolve
@@ -36,20 +36,20 @@ function enviarImagem(buffer, publicId) {
 }
 
 /** Substitui a foto de perfil do usuário autenticado. */
-async function atualizarFotoDePerfil(usuarioId, arquivo) {
-  if (!arquivo?.buffer) throw erro('Nenhuma imagem enviada', 400);
+async function updateProfilePhoto(userId, file) {
+  if (!file?.buffer) throw fail('Nenhuma imagem enviada', 400);
 
-  let resultado;
+  let result;
   try {
-    resultado = await enviarImagem(arquivo.buffer, usuarioId);
+    result = await uploadImage(file.buffer, userId);
   } catch {
-    throw erro('Não foi possível processar a imagem', 502);
+    throw fail('Não foi possível processar a imagem', 502);
   }
 
-  const linhas = await usuariosRepository.atualizarFoto(usuarioId, resultado.secure_url);
-  if (!linhas) throw erro('Usuário não encontrado', 404);
+  const rows = await usersRepository.updatePhoto(userId, result.secure_url);
+  if (!rows) throw fail('Usuário não encontrado', 404);
 
-  return { fotoUrl: resultado.secure_url };
+  return { photoUrl: result.secure_url };
 }
 
-module.exports = { atualizarFotoDePerfil };
+module.exports = { updateProfilePhoto };

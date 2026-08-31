@@ -16,17 +16,17 @@
  *     grandeza acima do que este projeto envia.
  *
  * Se um dia a escolha mudar, só este arquivo muda: o resto do sistema
- * conhece apenas `enviarEmail({ para, assunto, html, texto })`.
+ * conhece apenas `sendEmail({ to, subject, html, text })`.
  */
 
 /* A dependência é carregada de forma preguiçosa, dentro da função, e não no
    topo do arquivo. Assim o projeto continua subindo — e os testes continuam
    rodando — antes de `npm i resend` ter sido executado. Um require no topo
    derrubaria o servidor inteiro por causa de um recurso opcional. */
-let clienteResend = null;
+let resendClient = null;
 
 /** Endereço remetente. Precisa ser de um domínio verificado no Resend. */
-const REMETENTE = process.env.EMAIL_REMETENTE || 'Blabry <onboarding@resend.dev>';
+const SENDER = process.env.EMAIL_SENDER || 'Blabry <onboarding@resend.dev>';
 
 /**
  * Em desenvolvimento sem chave configurada, o e-mail é impresso no console
@@ -37,16 +37,16 @@ const REMETENTE = process.env.EMAIL_REMETENTE || 'Blabry <onboarding@resend.dev>
  * Em produção o comportamento é o oposto — falta de chave é erro, e não um
  * modo silencioso onde ninguém recebe nada.
  */
-const MODO_CONSOLE = !process.env.RESEND_API_KEY;
+const CONSOLE_MODE = !process.env.RESEND_API_KEY;
 
 /**
  * Envia um e-mail transacional.
  *
- * @param {{para: string, assunto: string, html: string, texto: string}} mensagem
+ * @param {{to: string, subject: string, html: string, text: string}} message
  * @returns {Promise<void>}
  */
-async function enviarEmail({ para, assunto, html, texto }) {
-  if (MODO_CONSOLE) {
+async function sendEmail({ to, subject, html, text }) {
+  if (CONSOLE_MODE) {
     if (process.env.NODE_ENV === 'production') {
       // Em produção isso é falha de configuração, não um modo de trabalho.
       throw Object.assign(
@@ -58,26 +58,26 @@ async function enviarEmail({ para, assunto, html, texto }) {
     // eslint-disable-next-line no-console
     console.log(
       `\n───────── E-MAIL (modo console) ─────────\n` +
-      `Para:    ${para}\n` +
-      `Assunto: ${assunto}\n\n${texto}\n` +
+      `Para:    ${to}\n` +
+      `Assunto: ${subject}\n\n${text}\n` +
       `─────────────────────────────────────────\n`
     );
     return;
   }
 
   // Carrega e instancia uma única vez, no primeiro envio.
-  if (!clienteResend) {
+  if (!resendClient) {
     // eslint-disable-next-line global-require
     const { Resend } = require('resend');
-    clienteResend = new Resend(process.env.RESEND_API_KEY);
+    resendClient = new Resend(process.env.RESEND_API_KEY);
   }
 
-  const { error } = await clienteResend.emails.send({
-    from: REMETENTE,
-    to: para,
-    subject: assunto,
+  const { error } = await resendClient.emails.send({
+    from: SENDER,
+    to: to,
+    subject: subject,
     html,
-    text: texto,
+    text: text,
   });
 
   /* O SDK do Resend devolve o erro no retorno em vez de lançar. Sem esta
@@ -91,4 +91,4 @@ async function enviarEmail({ para, assunto, html, texto }) {
   }
 }
 
-module.exports = { enviarEmail, MODO_CONSOLE, REMETENTE };
+module.exports = { sendEmail, CONSOLE_MODE, SENDER };

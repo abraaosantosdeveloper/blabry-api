@@ -4,7 +4,7 @@ const authController = require('../controllers/auth_controller');
 
 /**
  * @swagger
- * /auth/cadastro:
+ * /auth/signup:
  *   post:
  *     tags: [Autenticação]
  *     summary: Cria uma nova conta
@@ -21,10 +21,10 @@ const authController = require('../controllers/auth_controller');
  *             type: object
  *             required: [nome, apelido, email, senha, nascimento, nacionalidade, aceitouPolitica]
  *             properties:
- *               nome:
+ *               name:
  *                 type: string
  *                 example: Abraão Santos
- *               apelido:
+ *               alias:
  *                 type: string
  *                 description: "@ do usuário — 3 a 20 caracteres: minúsculas, números ou _"
  *                 example: abraao_dev
@@ -32,20 +32,20 @@ const authController = require('../controllers/auth_controller');
  *                 type: string
  *                 format: email
  *                 example: abraao@exemplo.com
- *               senha:
+ *               password:
  *                 type: string
  *                 format: password
  *                 description: Mínimo de 8 caracteres, uma maiúscula e um caractere especial
  *                 example: SenhaForte#1
- *               nascimento:
+ *               birthDate:
  *                 type: string
  *                 format: date
  *                 example: '2000-05-14'
- *               nacionalidade:
+ *               nationality:
  *                 type: string
  *                 description: Código ISO alpha-3 existente em `GET /countries`
  *                 example: BRA
- *               aceitouPolitica:
+ *               acceptedPolicy:
  *                 type: boolean
  *                 enum: [true]
  *                 description: |
@@ -62,28 +62,28 @@ const authController = require('../controllers/auth_controller');
  *           **Não devolve token.** A conta nasce com `email_verified_at`
  *           nulo e o login é recusado com 403 até a confirmação. Um código
  *           de 6 dígitos é enviado ao e-mail informado; use
- *           `POST /auth/verificar-email` para ativá-la.
+ *           `POST /auth/verify-email` para ativá-la.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 usuario: { $ref: '#/components/schemas/Usuario' }
- *                 verificacaoPendente: { type: boolean, example: true }
+ *                 user: { $ref: '#/components/schemas/PublicUser' }
+ *                 verificationPending: { type: boolean, example: true }
  *       400:
  *         description: Campos obrigatórios ausentes
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       409:
  *         description: Email ou @ já cadastrado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/cadastro', authController.cadastrarUsuario);
+router.post('/signup', authController.signUp);
 
 /**
  * @swagger
@@ -111,7 +111,7 @@ router.post('/cadastro', authController.cadastrarUsuario);
  *                 type: string
  *                 description: Email ou @ do usuário
  *                 example: abraao@exemplo.com
- *               senha:
+ *               password:
  *                 type: string
  *                 format: password
  *                 example: SenhaForte#1
@@ -120,17 +120,17 @@ router.post('/cadastro', authController.cadastrarUsuario);
  *         description: Autenticado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/RespostaAutenticacao' }
+ *             schema: { $ref: '#/components/schemas/AuthResponse' }
  *       400:
  *         description: Campos obrigatórios ausentes
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       401:
  *         description: Credenciais inválidas
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       403:
  *         description: |
  *           E-mail ainda não confirmado. A verificação da senha acontece
@@ -142,15 +142,15 @@ router.post('/cadastro', authController.cadastrarUsuario);
  *           usuário à tela de código em vez de dizer "senha errada".
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
 router.post('/login', authController.login);
 
 /**
  * @swagger
- * /auth/verificar-email/reenviar:
+ * /auth/verify-email/resend:
  *   post:
  *     tags: [Autenticação]
  *     summary: Reenvia o código de confirmação de e-mail
@@ -185,15 +185,15 @@ router.post('/login', authController.login);
  *         description: Novo código pedido cedo demais
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/verificar-email/reenviar', authController.reenviarCodigoCadastro);
+router.post('/verify-email/resend', authController.resendSignupCode);
 
 /**
  * @swagger
- * /auth/verificar-email:
+ * /auth/verify-email:
  *   post:
  *     tags: [Autenticação]
  *     summary: Confirma o e-mail e ativa a conta
@@ -219,7 +219,7 @@ router.post('/verificar-email/reenviar', authController.reenviarCodigoCadastro);
  *             required: [email, codigo]
  *             properties:
  *               email: { type: string, format: email, example: abraao@exemplo.com }
- *               codigo:
+ *               code:
  *                 type: string
  *                 pattern: '^[0-9]{6}$'
  *                 example: '048213'
@@ -228,20 +228,20 @@ router.post('/verificar-email/reenviar', authController.reenviarCodigoCadastro);
  *         description: E-mail confirmado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/RespostaAutenticacao' }
+ *             schema: { $ref: '#/components/schemas/AuthResponse' }
  *       400:
  *         description: Código inválido ou expirado
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/verificar-email', authController.confirmarEmail);
+router.post('/verify-email', authController.confirmEmail);
 
 /**
  * @swagger
- * /auth/senha/codigo:
+ * /auth/password/code:
  *   post:
  *     tags: [Autenticação]
  *     summary: Envia o código para troca de senha
@@ -271,15 +271,15 @@ router.post('/verificar-email', authController.confirmarEmail);
  *         description: Novo código pedido cedo demais
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/senha/codigo', authController.solicitarTrocaDeSenha);
+router.post('/password/code', authController.requestPasswordReset);
 
 /**
  * @swagger
- * /auth/senha:
+ * /auth/password:
  *   post:
  *     tags: [Autenticação]
  *     summary: Define uma nova senha mediante código
@@ -299,8 +299,8 @@ router.post('/senha/codigo', authController.solicitarTrocaDeSenha);
  *             required: [email, codigo, novaSenha]
  *             properties:
  *               email: { type: string, format: email, example: abraao@exemplo.com }
- *               codigo: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
- *               novaSenha:
+ *               code: { type: string, pattern: '^[0-9]{6}$', example: '048213' }
+ *               newPassword:
  *                 type: string
  *                 format: password
  *                 description: Mínimo 8 caracteres, uma maiúscula e um caractere especial
@@ -318,11 +318,11 @@ router.post('/senha/codigo', authController.solicitarTrocaDeSenha);
  *         description: Código inválido, expirado, ou senha fraca
  *         content:
  *           application/json:
- *             schema: { $ref: '#/components/schemas/Erro' }
+ *             schema: { $ref: '#/components/schemas/Error' }
  *       500:
- *         $ref: '#/components/responses/ErroInterno'
+ *         $ref: '#/components/responses/InternalError'
  */
-router.post('/senha', authController.trocarSenha);
+router.post('/password', authController.resetPassword);
 
 /**
  * @swagger

@@ -1,147 +1,147 @@
 const { v7: uuidv7 } = require('uuid')
 const pool = require('../database')
-const UsuariosRepository = require('../repositories/users_repository')
-const CountriesRepository = require('../repositories/countries_repository') 
-const countriesRepository = new CountriesRepository(pool)
+const UsersRepository = require('../repositories/users_repository')
+const CountriesRepository = require('../repositories/countries_repository')
 
-const usuariosRepository = new UsuariosRepository(pool);
+const countriesRepository = new CountriesRepository(pool)
+const usersRepository = new UsersRepository(pool);
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-const LIMITES = {
-  nome: { min: 2, max: 100 },
+const fail = (message, status) =>
+  Object.assign(new Error(message), { status });
+
+const LIMITS = {
+  name: { min: 2, max: 100 },
   bio: { max: 280 },
-  idadeMinima: 13,
+  minimumAge: 13,
 }
 
-const anos = (data) => (Date.now() - new Date(data).getTime()) / 31557600000
+const years = (date) => (Date.now() - new Date(date).getTime()) / 31557600000
 
 /** Valida e normaliza um campo. Devolve o valor pronto para o banco. */
-const VALIDADORES = {
-  nome(valor) {
-    const nome = String(valor ?? '').trim().replace(/\s+/g, ' ')
-    if (nome.length < LIMITES.nome.min || nome.length > LIMITES.nome.max)
-      throw erro('O nome deve ter entre 2 e 100 caracteres', 400)
-    return nome
+const VALIDATORS = {
+  name(value) {
+    const name = String(value ?? '').trim().replace(/\s+/g, ' ')
+    if (name.length < LIMITS.name.min || name.length > LIMITS.name.max)
+      throw fail('O nome deve ter entre 2 e 100 caracteres', 400)
+    return name
   },
 
-  bio(valor) {
-    const bio = String(valor ?? '').trim()
-    if (bio.length > LIMITES.bio.max)
-      throw erro('A bio deve ter no máximo 280 caracteres', 400)
+  bio(value) {
+    const bio = String(value ?? '').trim()
+    if (bio.length > LIMITS.bio.max)
+      throw fail('A bio deve ter no máximo 280 caracteres', 400)
     return bio || null
   },
 
-  email(valor) {
-    const email = String(valor ?? '').trim().toLowerCase()
-    if (!EMAIL_RE.test(email)) throw erro('E-mail inválido', 400)
+  email(value) {
+    const email = String(value ?? '').trim().toLowerCase()
+    if (!EMAIL_RE.test(email)) throw fail('E-mail inválido', 400)
     return email
   },
 
-  nascimento(valor) {
-    const data = String(valor ?? '').slice(0, 10)
-    if (Number.isNaN(new Date(data).getTime()))
-      throw erro('Data de nascimento inválida', 400)
-    if (anos(data) < LIMITES.idadeMinima)
-      throw erro('É necessário ter pelo menos 13 anos', 400)
-    return data
+  birthDate(value) {
+    const date = String(value ?? '').slice(0, 10)
+    if (Number.isNaN(new Date(date).getTime()))
+      throw fail('Data de nascimento inválida', 400)
+    if (years(date) < LIMITS.minimumAge)
+      throw fail('É necessário ter pelo menos 13 anos', 400)
+    return date
   },
 
-  nacionalidade(valor) {
-    const codigo = String(valor ?? '').trim().toUpperCase()
-    if (!/^[A-Z]{3}$/.test(codigo))
-      throw erro('Nacionalidade inválida', 400)
-    return codigo
+  nationality(value) {
+    const code = String(value ?? '').trim().toUpperCase()
+    if (!/^[A-Z]{3}$/.test(code))
+      throw fail('Nacionalidade inválida', 400)
+    return code
   },
 }
 
 /**
  * Atualização parcial do perfil do usuário autenticado.
- * @param {string} usuarioId vindo do token, nunca do corpo
- * @param {object} campos apenas os campos que mudaram
+ * @param {string} userId vindo do token, nunca do corpo
+ * @param {object} fields apenas os campos que mudaram
  */
-async function atualizarPerfil(usuarioId, campos = {}) {
-  const recebidos = Object.keys(campos)
-    .filter((chave) => Object.hasOwn(VALIDADORES, chave))
+async function updateProfile(userId, fields = {}) {
+  const received = Object.keys(fields)
+    .filter((key) => Object.hasOwn(VALIDATORS, key))
 
-  if (!recebidos.length)
-    throw erro('Nenhum campo editável foi informado', 400)
+  if (!received.length)
+    throw fail('Nenhum campo editável foi informado', 400)
 
   // Valida e normaliza antes de tocar o banco.
-  const validados = {}
-  for (const chave of recebidos) {
-    validados[chave] = VALIDADORES[chave](campos[chave])
+  const validated = {}
+  for (const key of received) {
+    validated[key] = VALIDATORS[key](fields[key])
   }
 
-  const resultado = await usuariosRepository.buscarPerfil('id', usuarioId)
-  if (!resultado) throw erro('Usuário não encontrado', 404)
+  const result = await usersRepository.findProfile('id', userId)
+  if (!result) throw fail('Usuário não encontrado', 404)
 
-  const { usuario } = resultado
+  const { user } = result
 
-  // --- Troca de e-mail exige a senha atual (remova este bloco se não quiser) ---
-  if (validados.email && validados.email !== usuario.email) {
-    if (!campos.senhaAtual)
-      throw erro('Informe a senha atual para alterar o e-mail', 401)
+  // --- Troca de e-mail exige a senha atual ---
+  if (validated.email && validated.email !== user.email) {
+    if (!fields.currentPassword)
+      throw fail('Informe a senha atual para alterar o e-mail', 401)
 
-    if (!(await usuario.verificarSenha(campos.senhaAtual)))
-      throw erro('Senha incorreta', 401)
+    if (!(await user.verifyPassword(fields.currentPassword)))
+      throw fail('Senha incorreta', 401)
 
-    if (await usuariosRepository.emailEmUso(validados.email, usuarioId))
-      throw erro('Este e-mail já está em uso', 409)
+    if (await usersRepository.emailInUse(validated.email, userId))
+      throw fail('Este e-mail já está em uso', 409)
   }
-  // -----------------------------------------------------------------------
+  // -------------------------------------------
 
-  if (validados.nacionalidade) {
-    const existe = await countriesRepository.existe(validados.nacionalidade)
-    if (!existe) throw erro('Nacionalidade não reconhecida', 400)
+  if (validated.nationality) {
+    const exists = await countriesRepository.exists(validated.nationality)
+    if (!exists) throw fail('Nacionalidade não reconhecida', 400)
   }
 
-  await usuariosRepository.atualizar(usuarioId, validados)
+  await usersRepository.update(userId, validated)
 
-  return meuPerfil(usuarioId)
+  return myProfile(userId)
 }
 
-const erro = (mensagem, status) =>
-  Object.assign(new Error(mensagem), { status });
-
 /** Perfil do próprio usuário autenticado. */
-async function meuPerfil(usuarioId) {
-  const resultado = await usuariosRepository.buscarPerfil('id', usuarioId);
+async function myProfile(userId) {
+  const result = await usersRepository.findProfile('id', userId);
 
-  if (!resultado) throw erro('Usuário não encontrado', 404);
-  
-  const { usuario, seguidores, seguindo } = resultado;
-  return usuario.paraPerfil({ proprio: true, seguidores, seguindo });
+  if (!result) throw fail('Usuário não encontrado', 404);
+
+  const { user, followers, following } = result;
+  return user.toProfile({ own: true, followers, following });
 }
 
 /** Perfil público de outro usuário. */
-async function perfilPorAlias(alias, visitanteId) {
-  if (!alias) throw erro('Alias não informado', 400);
+async function profileByAlias(alias, viewerId) {
+  if (!alias) throw fail('Alias não informado', 400);
 
-  const resultado = await usuariosRepository.buscarPerfil('alias', alias, visitanteId);
+  const result = await usersRepository.findProfile('alias', alias, viewerId);
 
-  if (!resultado) throw erro('Usuário não encontrado', 404);
+  if (!result) throw fail('Usuário não encontrado', 404);
 
-  const { usuario, seguidores, seguindo, seguindoEste, teSegue } = resultado;
-  
+  const { user, followers, following, isFollowing, followsYou } = result;
+
   // Visitar o próprio perfil pela URL pública ainda é o próprio perfil.
-  const proprio = usuario.id === visitanteId;
-  
-  return usuario.paraPerfil({ proprio, seguidores, seguindo, seguindoEste, teSegue });
-}
+  const own = user.id === viewerId;
 
+  return user.toProfile({ own, followers, following, isFollowing, followsYou });
+}
 
 /* ------------------------------------------------------------------
    Busca de usuários
    ------------------------------------------------------------------ */
 
 /** Menor termo aceito. Abaixo disso a busca traria meio banco de dados. */
-const BUSCA_MINIMA = 2
+const MINIMUM_SEARCH = 2
 
 /** Quantos resultados por página quando o cliente não pede outro valor. */
-const LIMITE_PADRAO = 8
+const DEFAULT_LIMIT = 8
 
-/** Teto por página. Impede que ?limite=100000 derrube a instância. */
-const LIMITE_MAXIMO = 50
+/** Teto por página. Impede que ?limit=100000 derrube a instância. */
+const MAX_LIMIT = 50
 
 /**
  * Converte um valor vindo da query string em inteiro dentro de uma faixa.
@@ -150,61 +150,60 @@ const LIMITE_MAXIMO = 50
  *  - o que estiver fora da faixa é puxado para dentro dela
  * Assim nada estoura e o repositório sempre recebe inteiros válidos.
  */
-function inteiroNaFaixa(valor, { padrao, minimo, maximo }) {
-    const numero = Number.parseInt(valor, 10)
-    if (!Number.isInteger(numero)) return padrao
-    return Math.min(Math.max(numero, minimo), maximo)
+function intInRange(value, { fallback, min, max }) {
+  const number = Number.parseInt(value, 10)
+  if (!Number.isInteger(number)) return fallback
+  return Math.min(Math.max(number, min), max)
 }
 
 /**
  * Busca usuários por nome ou @.
  *
- * @param {object} opcoes
- * @param {string} opcoes.usuarioId quem está buscando (vem do token)
- * @param {string} opcoes.q         termo digitado
- * @param {string} opcoes.pagina    número da página, como texto da URL
- * @param {string} opcoes.limite    itens por página, como texto da URL
+ * @param {object} options
+ * @param {string} options.userId quem está buscando (vem do token)
+ * @param {string} options.q      termo digitado
+ * @param {string} options.page   número da página, como texto da URL
+ * @param {string} options.limit  itens por página, como texto da URL
  */
-async function buscar({ usuarioId, q, pagina, limite } = {}) {
-    // O @ pode vir digitado pelo usuário; ele não faz parte do alias gravado.
-    // trim() antes e depois porque " @abraao " é entrada plausível.
-    const termo = String(q ?? '').trim().replace(/^@/, '').trim()
+async function search({ userId, q, page, limit } = {}) {
+  // O @ pode vir digitado pelo usuário; ele não faz parte do alias gravado.
+  // trim() antes e depois porque " @abraao " é entrada plausível.
+  const term = String(q ?? '').trim().replace(/^@/, '').trim()
 
-    // Termo curto demais devolve lista vazia, e não a base inteira: um filtro
-    // que não pode ser satisfeito nunca deve retornar tudo.
-    if (termo.length < BUSCA_MINIMA) {
-        return { usuarios: [], pagina: 1, totalPaginas: 1, total: 0 }
-    }
+  // Termo curto demais devolve lista vazia, e não a base inteira: um filtro
+  // que não pode ser satisfeito nunca deve retornar tudo.
+  if (term.length < MINIMUM_SEARCH) {
+    return { users: [], page: 1, totalPages: 1, total: 0 }
+  }
 
-    const paginaAtual = inteiroNaFaixa(pagina, {
-        padrao: 1, minimo: 1, maximo: Number.MAX_SAFE_INTEGER,
-    })
+  const currentPage = intInRange(page, {
+    fallback: 1, min: 1, max: Number.MAX_SAFE_INTEGER,
+  })
 
-    const porPagina = inteiroNaFaixa(limite, {
-        padrao: LIMITE_PADRAO, minimo: 1, maximo: LIMITE_MAXIMO,
-    })
+  const perPage = intInRange(limit, {
+    fallback: DEFAULT_LIMIT, min: 1, max: MAX_LIMIT,
+  })
 
-    // Aqui acontece a tradução entre dois vocabulários: o cliente fala em
-    // "página 3", o banco fala em "pule 16 linhas". Nenhum dos dois precisa
-    // conhecer o conceito do outro, e trocar por paginação com cursor mudaria
-    // apenas esta linha.
-    const { usuarios, total } = await usuariosRepository.buscar({
-        q: termo,
-        visitanteId: usuarioId,
-        limite: porPagina,
-        offset: (paginaAtual - 1) * porPagina,
-    })
+  // Aqui acontece a tradução entre dois vocabulários: o cliente fala em
+  // "página 3", o banco fala em "pule 16 linhas". Nenhum dos dois precisa
+  // conhecer o conceito do outro, e trocar por paginação com cursor mudaria
+  // apenas esta linha.
+  const { users, total } = await usersRepository.search({
+    q: term,
+    viewerId: userId,
+    limit: perPage,
+    offset: (currentPage - 1) * perPage,
+  })
 
-    return {
-        usuarios,
-        pagina: paginaAtual,
-        // Math.max(1, ...) porque uma lista vazia ainda tem uma página:
-        // sem isso o cliente exibiria "Página 1 de 0".
-        totalPaginas: Math.max(1, Math.ceil(total / porPagina)),
-        total,
-    }
+  return {
+    users,
+    page: currentPage,
+    // Math.max(1, ...) porque uma lista vazia ainda tem uma página:
+    // sem isso o cliente exibiria "Página 1 de 0".
+    totalPages: Math.max(1, Math.ceil(total / perPage)),
+    total,
+  }
 }
-
 
 /* ------------------------------------------------------------------
    Seguir e deixar de seguir
@@ -217,43 +216,43 @@ async function buscar({ usuarioId, q, pagina, limite } = {}) {
  * inverte o botão na hora para a interface responder de imediato — e depois
  * reconcilia com estes números, que são a verdade.
  *
- * @param {string}  alias     o @ de quem será seguido, vindo da URL
- * @param {string}  usuarioId quem está seguindo, vindo do token
- * @param {boolean} seguir    true para seguir, false para deixar de seguir
- * @returns {Promise<{seguindo: boolean, seguidores: number}>}
+ * @param {string}  alias  o @ de quem será seguido, vindo da URL
+ * @param {string}  userId quem está seguindo, vindo do token
+ * @param {boolean} follow true para seguir, false para deixar de seguir
+ * @returns {Promise<{following: boolean, followers: number}>}
  */
-async function alternarSeguir(alias, usuarioId, seguir) {
-    // O @ é opcional na URL: aceita tanto "abraao" quanto "@abraao".
-    const apelido = String(alias ?? '').trim().replace(/^@/, '')
+async function toggleFollow(alias, userId, follow) {
+  // O @ é opcional na URL: aceita tanto "abraao" quanto "@abraao".
+  const handle = String(alias ?? '').trim().replace(/^@/, '')
 
-    if (!apelido) throw erro('Usuário não informado', 400)
+  if (!handle) throw fail('Usuário não informado', 400)
 
-    // Primeiro traduz o @ em id: as tabelas de relacionamento guardam
-    // identificadores, não apelidos.
-    const seguidoId = await usuariosRepository.buscarIdPorAlias(apelido)
+  // Primeiro traduz o @ em id: as tabelas de relacionamento guardam
+  // identificadores, não apelidos.
+  const targetId = await usersRepository.findIdByAlias(handle)
 
-    // Alias inexistente, ou conta excluída, resultam em 404.
-    if (!seguidoId) throw erro('Usuário não encontrado', 404)
+  // Alias inexistente, ou conta excluída, resultam em 404.
+  if (!targetId) throw fail('Usuário não encontrado', 404)
 
-    // Seguir a si mesmo não faz sentido e sujaria os contadores do perfil.
-    // A restrição UNIQUE não pega este caso, porque o par seria válido.
-    if (seguidoId === usuarioId)
-        throw erro('Você não pode seguir a si mesmo', 400)
+  // Seguir a si mesmo não faz sentido e sujaria os contadores do perfil.
+  // A restrição UNIQUE não pega este caso, porque o par seria válido.
+  if (targetId === userId)
+    throw fail('Você não pode seguir a si mesmo', 400)
 
-    if (seguir) {
-        // O id da linha é gerado aqui, no serviço, como fazemos com usuário
-        // e publicação — o repositório não inventa identificadores.
-        await usuariosRepository.seguir(uuidv7(), usuarioId, seguidoId)
-    } else {
-        await usuariosRepository.deixarDeSeguir(usuarioId, seguidoId)
-    }
+  if (follow) {
+    // O id da linha é gerado aqui, no serviço, como fazemos com usuário
+    // e publicação — o repositório não inventa identificadores.
+    await usersRepository.follow(uuidv7(), userId, targetId)
+  } else {
+    await usersRepository.unfollow(userId, targetId)
+  }
 
-    return {
-        seguindo: seguir,
-        // Recontado, e não incrementado: se duas pessoas seguirem ao mesmo
-        // tempo, o número final é o do banco.
-        seguidores: await usuariosRepository.contarSeguidores(seguidoId),
-    }
+  return {
+    following: follow,
+    // Recontado, e não incrementado: se duas pessoas seguirem ao mesmo
+    // tempo, o número final é o do banco.
+    followers: await usersRepository.countFollowers(targetId),
+  }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarPerfil, buscar, alternarSeguir }
+module.exports = { myProfile, profileByAlias, updateProfile, search, toggleFollow }

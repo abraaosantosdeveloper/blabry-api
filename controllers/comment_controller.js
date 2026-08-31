@@ -1,43 +1,43 @@
 const commentService = require('../services/comment_service');
 
-async function listar(req, res, next) {
+async function list(req, res, next) {
   try {
-    const { pagina, limite } = req.query;
-    res.status(200).json(await commentService.listar(req.params.id, { pagina, limite }));
+    const { page, limit } = req.query;
+    res.status(200).json(await commentService.list(req.params.id, { page, limit }));
   } catch (err) {
     next(err);
   }
 }
 
-async function criar(req, res, next) {
+async function create(req, res, next) {
   try {
-    const comentario = await commentService.criar(req.params.id, req.userId, req.body?.texto);
-    res.status(201).json(comentario);
+    const comment = await commentService.create(req.params.id, req.userId, req.body?.text);
+    res.status(201).json(comment);
   } catch (err) {
     next(err);
   }
 }
 
-async function editar(req, res, next) {
+async function edit(req, res, next) {
   try {
-    const comentario = await commentService.editar(
+    const comment = await commentService.edit(
       req.params.comentarioId,
       req.userId,
-      req.body?.texto
+      req.body?.text
     );
-    res.status(200).json(comentario);
+    res.status(200).json(comment);
   } catch (err) {
     next(err);
   }
 }
 
-async function excluir(req, res, next) {
+async function remove(req, res, next) {
   try {
-    await commentService.excluir(req.params.comentarioId, req.userId);
+    await commentService.remove(req.params.comentarioId, req.userId);
     res.status(204).end();
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { listar, criar, editar, excluir };
+module.exports = { list, create, edit, remove };

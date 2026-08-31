@@ -20,7 +20,7 @@ class VerificationRepository {
    * serviço; o repositório não conhece a política de hashing, apenas persiste
    * o que recebe — a mesma divisão usada com a senha do usuário.
    *
-   * @param {{id: string, userId: string, purpose: string, codeHash: string, expiresAt: Date}} dados
+   * @param {{id: string, userId: string, purpose: string, codeHash: string, expiresAt: Date}} data
    */
   async create({ id, userId, purpose, codeHash, expiresAt }) {
     await this.pool.execute(
@@ -36,7 +36,7 @@ class VerificationRepository {
    * "Utilizável" tem três condições, todas no WHERE:
    *   - não foi consumido (`used_at IS NULL`);
    *   - não expirou (`expires_at > NOW()`);
-   *   - ainda tem attempts (`attempts < ?`).
+   *   - ainda tem tentativas (`attempts < ?`).
    *
    * Filtrar no banco, e não em JavaScript depois, importa: um código expirado
    * que chegasse até aqui poderia ser comparado por engano em alguma
@@ -93,7 +93,7 @@ class VerificationRepository {
     return rows[0] ? Number(rows[0].segundos) : null;
   }
 
-  /** Incrementa o contador de attempts erradas de um código. */
+  /** Incrementa o contador de tentativas erradas de um código. */
   async registerAttempt(id) {
     await this.pool.execute(
       'UPDATE verification_code SET attempts = attempts + 1 WHERE id = ?',
