@@ -28,4 +28,13 @@ async function perfilPorAlias(req, res, next) {
   }
 }
 
-module.exports = { meuPerfil, perfilPorAlias, atualizarFoto };
+async function atualizarPerfil(req, res, next) {
+  try {
+    const perfil = await usuariosService.atualizarPerfil(req.userId, req.body);
+    res.status(200).json(perfil);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { meuPerfil, perfilPorAlias, atualizarFoto, atualizarPerfil };
