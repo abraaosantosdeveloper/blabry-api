@@ -2,6 +2,7 @@ const { v7: uuidv7 } = require('uuid');
 const pool = require('../database');
 const PostRepository = require('../repositories/post_repository');
 const Post = require('../models/post');
+const { JANELA_MINUTOS, dentroDaJanela } = require('../utils/janela_edicao');
 
 const postRepository = new PostRepository(pool);
 
@@ -70,6 +71,35 @@ async function criar(usuarioId, texto) {
 }
 
 /**
+ * Edita uma publicação do próprio autor, dentro da janela de tempo.
+ * A ordem das verificações vai do que não depende de nada (formato) ao que
+ * depende do estado (prazo) — e a autoria vem antes do prazo para não
+ * revelar a existência do post a quem não é dono dele.
+ */
+async function editar(id, usuarioId, texto) {
+  const conteudo = String(texto ?? '').trim();
+
+  if (!conteudo)
+    throw erro('O blab não pode estar vazio', 400);
+
+  if (conteudo.length > TEXTO_MAX)
+    throw erro(`O blab deve ter no máximo ${TEXTO_MAX} caracteres`, 400);
+
+  const post = await postRepository.buscarPorId(id, usuarioId);
+
+  if (!post) throw erro('Publicação não encontrada', 404);
+  if (!post.pertenceA(usuarioId)) throw erro('Você só pode editar suas próprias publicações', 403);
+
+  if (!dentroDaJanela(post.criadoEm))
+    throw erro(`A edição só é possível nos primeiros ${JANELA_MINUTOS} minutos`, 409);
+
+  if (conteudo === post.texto) return post;
+
+  await postRepository.atualizar(id, usuarioId, conteudo);
+  return postRepository.buscarPorId(id, usuarioId);
+}
+
+/**
  * Exclui uma publicação do próprio autor.
  *
  * A exclusão é tentada primeiro: a autoria está no WHERE, então não há
@@ -109,4 +139,4 @@ async function alternarCurtida(postId, usuarioId, curtir) {
   };
 }
 
-module.exports = { listar, criar, excluir, alternarCurtida };
+module.exports = { listar, criar, excluir, editar, alternarCurtida };

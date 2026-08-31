@@ -103,6 +103,17 @@ class PostRepository {
     return this.buscarPorId(linha.id, visitanteId);
   }
 
+    /** Atualiza o conteúdo e marca a edição. Autoria no WHERE. */
+  async atualizar(id, autorId, conteudo) {
+    const [resultado] = await this.pool.execute(
+      `UPDATE post
+          SET content = ?, edited_at = NOW()
+        WHERE id = ? AND user_id = ?`,
+      [conteudo, id, autorId]
+    );
+    return resultado.affectedRows;
+  }
+
   /**
    * Exclusão restrita ao autor. A autoria é parte do WHERE, não uma
    * checagem anterior: assim não existe janela entre verificar e apagar.

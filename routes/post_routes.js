@@ -293,7 +293,58 @@ router.patch('/:id/comments/:comentarioId', commentController.editar);
  */
 router.delete('/:id/comments/:comentarioId', commentController.excluir);
 
-
+/**
+ * @swagger
+ * /posts/{id}:
+ *   patch:
+ *     tags: [Publicações]
+ *     summary: Edita uma publicação
+ *     description: |
+ *       Permitido apenas ao autor e apenas nos primeiros 15 minutos, medidos
+ *       pelo relógio do servidor. Publicações editadas passam a expor
+ *       `editadoEm` e são marcadas como tal na interface — quem curtiu ou
+ *       comentou reagiu ao texto anterior.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [texto]
+ *             properties:
+ *               texto: { type: string, minLength: 1, maxLength: 280 }
+ *     responses:
+ *       200:
+ *         description: Publicação atualizada
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Post' }
+ *       400:
+ *         description: Texto vazio ou acima de 280 caracteres
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       401:
+ *         $ref: '#/components/responses/NaoAutorizado'
+ *       403:
+ *         description: A publicação pertence a outro usuário
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ *       404:
+ *         $ref: '#/components/responses/NaoEncontrado'
+ *       409:
+ *         description: Janela de 15 minutos encerrada
+ *         content:
+ *           application/json:
+ *             schema: { $ref: '#/components/schemas/Erro' }
+ */
+router.patch('/:id', postController.editar);
 
 /**
  * @swagger

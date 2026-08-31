@@ -24,6 +24,15 @@ async function criar(req, res, next) {
   }
 }
 
+async function editar(req, res, next) {
+  try {
+    const post = await postService.editar(req.params.id, req.userId, req.body?.texto);
+    res.status(200).json(post);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function excluir(req, res, next) {
   try {
     await postService.excluir(req.params.id, req.userId);
@@ -49,4 +58,4 @@ async function descurtir(req, res, next) {
     next(err);
   }
 }
-module.exports = { listar, criar, excluir, curtir, descurtir };
+module.exports = { listar, criar, editar, excluir, curtir, descurtir };
