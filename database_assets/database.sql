@@ -1,4 +1,19 @@
-create database if not exists blabry_db;
+/* ============================================================
+   Blabry — esquema completo
+   ------------------------------------------------------------
+   Este arquivo cria o banco do zero, já com todas as decisões
+   tomadas até aqui. Para evoluir um banco que já existe, use os
+   arquivos em migrations/ — o `create table if not exists` abaixo
+   NÃO adiciona colunas a tabelas existentes.
+
+   utf8mb4 é obrigatório: os nomes de países têm acentos e os posts
+   têm emojis, que ocupam 4 bytes e não cabem no utf8 do MySQL.
+   ============================================================ */
+
+create database if not exists blabry_db
+    character set utf8mb4
+    collate utf8mb4_unicode_ci;
+
 use blabry_db;
 
 /* Países para a nacionalidade */
@@ -23,7 +38,11 @@ create table if not exists user(
     deleted_at datetime null default null,
 
     primary key(id),
-    foreign key(nationality) references countries(country)
+    foreign key(nationality) references countries(country),
+
+    /* Busca de usuários: LIKE 'termo%' em full_name.
+       alias e email já são indexados por serem unique. */
+    index idx_user_nome (full_name)
 );
 
 /* Chat (suporta conversas privadas e grupos) */
@@ -76,22 +95,42 @@ create table if not exists post(
     user_id char(36) not null,
     content text not null,
     created_at datetime default current_timestamp,
+    /* Preenchido na primeira edição. A interface exibe "editado" a partir
+       dele: quem curtiu endossou o texto que leu. */
+    edited_at datetime null default null,
 
     primary key(id),
-    foreign key(user_id) references user(id) on delete cascade
+    foreign key(user_id) references user(id) on delete cascade,
+
+    /* Feed: ORDER BY created_at DESC, id DESC */
+    index idx_post_created (created_at desc, id desc),
+    /* Publicações de um perfil */
+    index idx_post_autor (user_id, created_at desc),
+    /* Busca por conteúdo. LIKE '%termo%' não usa índice; MATCH usa. */
+    fulltext index idx_post_conteudo (content)
 );
 
 /* Comentários das postagens */
 create table if not exists comment(
     id char(36) not null,
     post_id char(36) not null,
+    /* Resposta a outro comentário — um nível só, com menção ao autor.
+       A listagem permanece plana: sem árvore recursiva. */
+    reply_to char(36) null default null,
     user_id char(36) not null,
     content text not null,
     created_at datetime default current_timestamp,
+    /* Preenchido na primeira edição, dentro da janela de 15 minutos. */
+    edited_at datetime null default null,
 
     primary key(id),
     foreign key(post_id) references post(id) on delete cascade,
-    foreign key(user_id) references user(id) on delete cascade
+    foreign key(user_id) references user(id) on delete cascade,
+    /* SET NULL: apagar o comentário original não apaga as respostas. */
+    foreign key(reply_to) references comment(id) on delete set null,
+
+    /* WHERE post_id = ? ORDER BY created_at, e o COUNT(*) do card */
+    index idx_comment_post (post_id, created_at)
 );
 
 /* Curtidas das postagens */
@@ -133,7 +172,7 @@ create table if not exists like_comment(
     foreign key(user_id) references user(id) on delete cascade
 );
 
-create table password_reset (
+create table if not exists password_reset (
     id char(36) not null,
     user_id char(36) not null,
     code char(6) not null,
