@@ -163,7 +163,7 @@ async function edit(id, userId, text) {
   const post = await postRepository.findById(id, userId);
 
   if (!post) throw fail('Publicação não encontrada', 404);
-  if (!post.belongsTo(userId)) throw fail('Você só pode edit suas próprias publicações', 403);
+  if (!post.belongsTo(userId)) throw fail('Você só pode editar suas próprias publicações', 403);
 
   if (!withinWindow(post.createdAt))
     throw fail(`A edição só é possível nos primeiros ${WINDOW_MINUTES} minutos`, 409);
@@ -188,9 +188,9 @@ async function remove(id, userId) {
   const post = await postRepository.findById(id, userId);
 
   if (!post) throw fail('Publicação não encontrada', 404);
-  if (!post.belongsTo(userId)) throw fail('Você só pode remove suas próprias publicações', 403);
+  if (!post.belongsTo(userId)) throw fail('Você só pode remover suas próprias publicações', 403);
 
-  throw fail('Não foi possível remove a publicação', 500);
+  throw fail('Não foi possível remover a publicação', 500);
 
 }
 

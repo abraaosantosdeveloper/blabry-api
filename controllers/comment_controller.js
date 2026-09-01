@@ -21,7 +21,7 @@ async function create(req, res, next) {
 async function edit(req, res, next) {
   try {
     const comment = await commentService.edit(
-      req.params.comentarioId,
+      req.params.commentId,
       req.userId,
       req.body?.text
     );
@@ -33,7 +33,7 @@ async function edit(req, res, next) {
 
 async function remove(req, res, next) {
   try {
-    await commentService.remove(req.params.comentarioId, req.userId);
+    await commentService.remove(req.params.commentId, req.userId);
     res.status(204).end();
   } catch (err) {
     next(err);

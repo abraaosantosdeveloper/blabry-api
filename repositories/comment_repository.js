@@ -50,7 +50,7 @@ class CommentRepository {
       [row.id, row.post_id, row.user_id, row.content]
     );
 
-    return this.buscarPorId(row.id);
+    return this.findById(row.id);
   }
 
   async findById(id) {

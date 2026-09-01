@@ -85,7 +85,7 @@ async function edit(id, userId, text) {
     throw fail('Comentário não encontrado', 404);
 
   if (!comment.belongsTo(userId))
-    throw fail('Você só pode edit seus próprios comentários', 403);
+    throw fail('Você só pode editar seus próprios comentários', 403);
 
   if (!withinWindow(comment.createdAt))
     throw fail(`A edição só é possível nos primeiros ${WINDOW_MINUTES} minutos`, 409);
@@ -104,9 +104,9 @@ async function remove(id, userId) {
   const comment = await commentRepository.findById(id);
 
   if (!comment) throw fail('Comentário não encontrado', 404);
-  if (!comment.belongsTo(userId)) throw fail('Você só pode remove seus próprios comentários', 403);
+  if (!comment.belongsTo(userId)) throw fail('Você só pode remover seus próprios comentários', 403);
 
-  throw fail('Não foi possível remove o comentário', 500);
+  throw fail('Não foi possível remover o comentário', 500);
 }
 
 
