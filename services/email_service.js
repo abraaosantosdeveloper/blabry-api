@@ -18,6 +18,20 @@ const { VALIDITY_MINUTES } = require('../utils/verification_code');
    escapar, um nome contendo "<img onerror=...>" viraria marcação executável
    no cliente de e-mail de quem recebe. É o mesmo cuidado do HTML da página,
    com o agravante de que aqui não há framework fazendo isso por nós. */
+/**
+ * URL pública da logo exibida no topo do e-mail.
+ *
+ * É variável de ambiente, e não constante no código, por duas razões: a
+ * hospedagem da imagem pode mudar sem que o template mude, e o e-mail
+ * precisa continuar correto quando ela não existe — em desenvolvimento,
+ * por exemplo, onde ninguém configurou nada.
+ *
+ * Exige PNG (ou JPEG). **SVG não serve**: a maioria dos clientes de e-mail
+ * não renderiza SVG, e o Gmail é um deles. A logo do projeto é SVG, então
+ * precisa ser exportada antes de subir.
+ */
+const LOGO_URL = process.env.EMAIL_LOGO_URL || '';
+
 const escapeHtml = (value) =>
   String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -69,8 +83,24 @@ async function sendCode({ to, name, code, purpose }) {
   /* HTML com estilos embutidos: clientes de e-mail ignoram <style> no head e
      não carregam CSS externo. Nada de imagem remota, para o e-mail não
      depender de "exibir imagens". */
+  /* A logo é opcional em dois níveis. Se `EMAIL_LOGO_URL` não estiver
+     configurada, o bloco simplesmente não existe. E, mesmo configurada,
+     clientes de e-mail bloqueiam imagem externa por padrão — quem não
+     clicar em "exibir imagens" vê a mensagem sem ela. Por isso a logo fica
+     ACIMA do título, e não no lugar dele: o e-mail precisa se explicar
+     inteiro sem imagem alguma.
+
+     `display:block` evita o espaço fantasma que alguns clientes inserem
+     abaixo de imagens em linha. A largura é fixada no atributo `width`,
+     e não só no CSS, porque o Outlook ignora o segundo. */
+  const logo = LOGO_URL
+    ? `<img src="${escapeHtml(LOGO_URL)}" alt="Blabry" width="120"
+             style="display:block;width:120px;max-width:120px;height:auto;margin:0 0 20px">`
+    : '';
+
   const html = `
     <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1F2933">
+      ${logo}
       <h1 style="font-size:20px;margin:0 0 8px">${escapeHtml(template.title)}</h1>
       <p style="font-size:15px;line-height:1.6;margin:0 0 4px">Olá, ${escapeHtml(firstName)}.</p>
       <p style="font-size:15px;line-height:1.6;margin:0 0 20px">${escapeHtml(template.explanation)}</p>
