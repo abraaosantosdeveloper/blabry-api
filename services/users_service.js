@@ -116,7 +116,7 @@ async function myProfile(userId) {
 
 /** Perfil público de outro usuário. */
 async function profileByAlias(alias, viewerId) {
-  if (!alias) throw fail('Alias não informado', 400);
+  if (!alias) throw fail('@ não informado', 400);
 
   const result = await usersRepository.findProfile('alias', alias, viewerId);
 
