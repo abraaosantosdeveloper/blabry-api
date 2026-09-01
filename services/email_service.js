@@ -99,7 +99,7 @@ async function sendCode({ to, name, code, purpose }) {
     : '';
 
   const html = `
-    <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1F2933">
+    <div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1F2933;background-color:#FFFFFF">
       ${logo}
       <h1 style="font-size:20px;margin:0 0 8px">${escapeHtml(template.title)}</h1>
       <p style="font-size:15px;line-height:1.6;margin:0 0 4px">Olá, ${escapeHtml(firstName)}.</p>
