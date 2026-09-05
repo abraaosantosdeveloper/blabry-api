@@ -39,11 +39,27 @@ async function signUp({ name, alias, email, password, birthDate, nationality, ac
   if (acceptedPolicy !== true)
     throw fail('É necessário aceitar a política de privacidade', 400);
 
-  if (await authRepository.findByEmail(email))
-    throw fail('Credenciais inválidas', 409);
+  const existingByEmail = await authRepository.findByEmail(email);
+  const existingByAlias = await authRepository.findByAlias(alias);
 
-  if (await authRepository.findByAlias(alias))
+  /* Um duplo clique ou uma repetição automática pode chegar depois de a
+     primeira requisição já ter criado a conta. Só repetimos o sucesso quando
+     e-mail e alias apontam para a mesma conta ainda pendente e a senha prova
+     que é o mesmo cadastro; conflitos reais continuam sendo 409. */
+  if (existingByEmail || existingByAlias) {
+    const samePendingAccount = existingByEmail
+      && existingByAlias
+      && existingByEmail.id === existingByAlias.id
+      && !existingByEmail.emailVerified
+      && await existingByEmail.verifyPassword(password);
+
+    if (samePendingAccount) {
+      return { user: existingByEmail, verificationPending: true, created: false };
+    }
+
+    if (existingByEmail) throw fail('Credenciais inválidas', 409);
     throw fail('Este @ já está em uso', 409);
+  }
 
   const user = new User({
     id: uuidv7(),
@@ -72,7 +88,7 @@ async function signUp({ name, alias, email, password, birthDate, nationality, ac
     console.error('Falha ao enviar código de cadastro:', failure.message);
   }
 
-  return { user, verificationPending: true };
+  return { user, verificationPending: true, created: true };
 }
 
 /**
