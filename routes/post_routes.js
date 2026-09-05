@@ -64,7 +64,7 @@ const commentController = require('../controllers/comment_controller');
  *               text:
  *                 type: string
  *                 minLength: 1
- *                 maxLength: 280
+ *                 maxLength: 500
  *                 example: Primeiro blab por aqui!
  *     responses:
  *       201:
@@ -73,7 +73,7 @@ const commentController = require('../controllers/comment_controller');
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Post' }
  *       400:
- *         description: Texto vazio ou acima de 280 caracteres
+ *         description: Texto vazio ou acima de 500 caracteres
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
@@ -183,7 +183,7 @@ router.delete('/:id/like', postController.unlike);
  *             type: object
  *             required: [texto]
  *             properties:
- *               text: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 500 }
  *     responses:
  *       201:
  *         description: Comentário criado
@@ -191,7 +191,7 @@ router.delete('/:id/like', postController.unlike);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Comment' }
  *       400:
- *         description: Texto vazio ou acima de 280 caracteres
+ *         description: Texto vazio ou acima de 500 caracteres
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
@@ -233,7 +233,7 @@ router.post('/:id/comments', commentController.create);
  *             type: object
  *             required: [texto]
  *             properties:
- *               text: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 500 }
  *     responses:
  *       200:
  *         description: Comentário atualizado
@@ -241,7 +241,7 @@ router.post('/:id/comments', commentController.create);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Comment' }
  *       400:
- *         description: Texto vazio ou acima de 280 caracteres
+ *         description: Texto vazio ou acima de 500 caracteres
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
@@ -317,7 +317,7 @@ router.delete('/:id/comments/:commentId', commentController.remove);
  *             type: object
  *             required: [texto]
  *             properties:
- *               text: { type: string, minLength: 1, maxLength: 280 }
+ *               text: { type: string, minLength: 1, maxLength: 500 }
  *     responses:
  *       200:
  *         description: Publicação atualizada
@@ -325,7 +325,7 @@ router.delete('/:id/comments/:commentId', commentController.remove);
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Post' }
  *       400:
- *         description: Texto vazio ou acima de 280 caracteres
+ *         description: Texto vazio ou acima de 500 caracteres
  *         content:
  *           application/json:
  *             schema: { $ref: '#/components/schemas/Error' }
