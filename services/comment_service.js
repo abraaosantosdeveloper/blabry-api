@@ -11,7 +11,7 @@ const postRepository = new PostRepository(pool);
 const fail = (message, status) =>
   Object.assign(new Error(message), { status });
 
-const MAX_TEXT = 280;
+const MAX_TEXT = 500;
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 
