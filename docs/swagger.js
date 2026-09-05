@@ -66,7 +66,7 @@ const options = {
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid' },
-            text: { type: 'string', maxLength: 280, example: 'Primeiro blab!' },
+            text: { type: 'string', maxLength: 500, example: 'Primeiro blab!' },
             createdAt: { type: 'string', format: 'date-time' },
             editedAt: {
               type: 'string',
@@ -86,7 +86,7 @@ const options = {
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid' },
-            text: { type: 'string', maxLength: 280 },
+            text: { type: 'string', maxLength: 500 },
             createdAt: { type: 'string', format: 'date-time' },
             editedAt: {
               type: 'string',
