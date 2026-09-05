@@ -4,7 +4,8 @@ async function signUp(req, res, next) {
   try {
     const { name, alias, email, password, nationality, birthDate, acceptedPolicy } = req.body;
     const result = await authService.signUp({ name, alias, email, password, nationality, birthDate, acceptedPolicy });
-    res.status(201).json(result);
+    const { created = true, ...response } = result;
+    res.status(created ? 201 : 200).json(response);
   } catch (err) {
     next(err);
   }

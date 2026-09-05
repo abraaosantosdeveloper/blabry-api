@@ -172,6 +172,16 @@ describe('POST /auth/signup', () => {
 
     expect(res.status).toBe(409);
   });
+
+  it('trata a repetição idêntica de um cadastro pendente como sucesso', async () => {
+    const first = await request(app).post('/auth/signup').send(NEW_ACCOUNT);
+    const second = await request(app).post('/auth/signup').send(NEW_ACCOUNT);
+
+    expect(first.status).toBe(201);
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({ verificationPending: true });
+    expect(second.body.user.email).toBe(NEW_ACCOUNT.email);
+  });
 });
 
 /* ---------------- RF03 · Token JWT ---------------- */

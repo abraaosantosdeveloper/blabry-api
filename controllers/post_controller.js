@@ -1,4 +1,5 @@
 const postService = require('../services/post_service');
+const pillUpdateStream = require('../services/pill_update_stream');
 
 async function list(req, res, next) {
   try {
@@ -58,6 +59,7 @@ async function listByAuthor(req, res, next) {
 async function create(req, res, next) {
   try {
     const post = await postService.create(req.userId, req.body?.text);
+    pillUpdateStream.publish('new-post', {}, req.userId);
     res.status(201).json(post);
   } catch (err) {
     next(err);

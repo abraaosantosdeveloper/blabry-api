@@ -58,6 +58,8 @@ app.use('/countries', require('./routes/countries_routes'));
 
 // Middleware de autenticação JWT
 const authenticate = require('./middlewares/authentication');
+const authenticateSse = require('./middlewares/sse_authentication');
+app.use('/pill-updates', authenticateSse, require('./routes/pill_update_routes'));
 app.use(authenticate);
 app.use('/users', require('./routes/users_routes'));
 app.use('/posts', require('./routes/post_routes'));
